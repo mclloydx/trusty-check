@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Send, User, MapPin, Store, Package, Phone, MessageCircle } from "lucide-react";
+import { Send, User, MapPin, Store, Package, Phone, MessageCircle, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export function InspectionRequestForm() {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     customerName: "",
     whatsapp: "",
@@ -22,23 +26,85 @@ export function InspectionRequestForm() {
     deliveryNotes: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const serviceFees: Record<string, number> = {
+    inspection: 25,
+    "inspection-payment": 40,
+    "full-service": 60,
+  };
+
+  const serviceFeeLabels: Record<string, string> = {
+    inspection: "$25",
+    "inspection-payment": "$40",
+    "full-service": "$60+",
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Request Submitted!",
-      description: "We'll connect you with a local agent shortly.",
-    });
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('inspection_requests')
+        .insert({
+          user_id: user?.id || null,
+          customer_name: formData.customerName,
+          whatsapp: formData.whatsapp,
+          customer_address: formData.customerAddress || null,
+          store_name: formData.storeName,
+          store_location: formData.storeLocation,
+          product_details: formData.productDetails,
+          service_tier: formData.serviceTier,
+          service_fee: serviceFees[formData.serviceTier],
+          delivery_notes: formData.deliveryNotes || null,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Request Submitted!",
+        description: user 
+          ? "Your request has been saved. Track it in your dashboard." 
+          : "We'll contact you via WhatsApp shortly.",
+      });
+
+      // Reset form
+      setFormData({
+        customerName: "",
+        whatsapp: "",
+        customerAddress: "",
+        storeName: "",
+        storeLocation: "",
+        productDetails: "",
+        serviceTier: "inspection",
+        deliveryNotes: "",
+      });
+    } catch (error) {
+      console.error('Error submitting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const serviceFees: Record<string, string> = {
-    inspection: "$25",
-    "inspection-payment": "$40",
-    "full-service": "$60+",
-  };
+  // Pre-fill form with user profile data if logged in
+  useState(() => {
+    if (profile) {
+      setFormData(prev => ({
+        ...prev,
+        customerName: profile.full_name || "",
+        whatsapp: profile.phone || "",
+        customerAddress: profile.address || "",
+      }));
+    }
+  });
 
   return (
     <section id="request" className="py-24 bg-muted/30">
@@ -53,7 +119,10 @@ export function InspectionRequestForm() {
             Request an Inspection
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Fill out the form below and we'll assign a local agent to verify your purchase
+            {user 
+              ? "Submit your inspection request - it will be saved to your account"
+              : "Fill out the form below and we'll assign a local agent to verify your purchase"
+            }
           </p>
         </motion.div>
 
@@ -68,10 +137,13 @@ export function InspectionRequestForm() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-primary" />
-                Guest Inspection Request
+                {user ? "Your Inspection Request" : "Guest Inspection Request"}
               </CardTitle>
               <CardDescription>
-                No account needed. We'll contact you via WhatsApp.
+                {user 
+                  ? `Logged in as ${profile?.full_name || user.email}. Request will be tracked.`
+                  : "No account needed. We'll contact you via WhatsApp."
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -235,15 +307,24 @@ export function InspectionRequestForm() {
                   <div className="flex items-center justify-between mb-6">
                     <span className="text-muted-foreground">Service Fee</span>
                     <span className="text-2xl font-bold text-foreground">
-                      {serviceFees[formData.serviceTier]}
+                      {serviceFeeLabels[formData.serviceTier]}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-4">
                     * Service fees are non-refundable. Additional charges may apply for delivery and special requirements.
                   </p>
-                  <Button type="submit" size="xl" className="w-full group">
-                    Submit Request
-                    <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <Button type="submit" size="xl" className="w-full group" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        Submit Request
+                        <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </form>

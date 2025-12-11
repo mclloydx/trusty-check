@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      inspection_requests: {
+        Row: {
+          assigned_agent_id: string | null
+          created_at: string
+          customer_address: string | null
+          customer_name: string
+          delivery_notes: string | null
+          id: string
+          product_details: string
+          service_fee: number
+          service_tier: string
+          status: Database["public"]["Enums"]["request_status"]
+          store_location: string
+          store_name: string
+          updated_at: string
+          user_id: string | null
+          whatsapp: string
+        }
+        Insert: {
+          assigned_agent_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_name: string
+          delivery_notes?: string | null
+          id?: string
+          product_details: string
+          service_fee: number
+          service_tier?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          store_location: string
+          store_name: string
+          updated_at?: string
+          user_id?: string | null
+          whatsapp: string
+        }
+        Update: {
+          assigned_agent_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_name?: string
+          delivery_notes?: string | null
+          id?: string
+          product_details?: string
+          service_fee?: number
+          service_tier?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          store_location?: string
+          store_name?: string
+          updated_at?: string
+          user_id?: string | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -87,6 +141,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "agent" | "user"
+      request_status:
+        | "pending"
+        | "assigned"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -215,6 +275,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "agent", "user"],
+      request_status: [
+        "pending",
+        "assigned",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
     },
   },
 } as const

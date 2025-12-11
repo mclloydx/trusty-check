@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { 
   User, 
@@ -15,9 +16,38 @@ import {
   Phone,
   MapPin,
   Save,
-  Home
+  Home,
+  Package,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+interface InspectionRequest {
+  id: string;
+  store_name: string;
+  product_details: string;
+  service_tier: string;
+  service_fee: number;
+  status: string;
+  created_at: string;
+}
+
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType }> = {
+  pending: { label: "Pending", variant: "outline", icon: Clock },
+  assigned: { label: "Assigned", variant: "secondary", icon: AlertCircle },
+  in_progress: { label: "In Progress", variant: "default", icon: Package },
+  completed: { label: "Completed", variant: "default", icon: CheckCircle },
+  cancelled: { label: "Cancelled", variant: "destructive", icon: XCircle },
+};
+
+const serviceTierLabels: Record<string, string> = {
+  inspection: "Inspection Only",
+  "inspection-payment": "Inspection + Payment",
+  "full-service": "Full Service",
+};
 
 export default function UserDashboard() {
   const { user, role, loading, signOut, profile } = useAuth();
@@ -25,6 +55,8 @@ export default function UserDashboard() {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [requests, setRequests] = useState<InspectionRequest[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -46,6 +78,29 @@ export default function UserDashboard() {
       });
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (user) {
+      fetchRequests();
+    }
+  }, [user]);
+
+  const fetchRequests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inspection_requests')
+        .select('id, store_name, product_details, service_tier, service_fee, status, created_at')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRequests(data || []);
+    } catch (error) {
+      console.error('Error fetching requests:', error);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -120,7 +175,7 @@ export default function UserDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Welcome Card */}
         <Card className="mb-8">
           <CardHeader>
@@ -131,6 +186,76 @@ export default function UserDashboard() {
               Manage your account and view your inspection requests
             </CardDescription>
           </CardHeader>
+        </Card>
+
+        {/* Inspection Requests */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  My Inspection Requests
+                </CardTitle>
+                <CardDescription>
+                  Track the status of your inspection requests
+                </CardDescription>
+              </div>
+              <Link to="/#request">
+                <Button>New Request</Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingRequests ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : requests.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No inspection requests yet</p>
+                <Link to="/#request" className="text-primary hover:underline">
+                  Create your first request
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {requests.map((request) => {
+                  const status = statusConfig[request.status] || statusConfig.pending;
+                  const StatusIcon = status.icon;
+                  return (
+                    <div
+                      key={request.id}
+                      className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium truncate">{request.store_name}</h4>
+                            <Badge variant={status.variant} className="gap-1">
+                              <StatusIcon className="w-3 h-3" />
+                              {status.label}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                            {request.product_details}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span>{serviceTierLabels[request.service_tier] || request.service_tier}</span>
+                            <span>•</span>
+                            <span>${request.service_fee}</span>
+                            <span>•</span>
+                            <span>{new Date(request.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
         </Card>
 
         {/* Profile Card */}
@@ -237,21 +362,6 @@ export default function UserDashboard() {
                 placeholder="Enter your address"
               />
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-4">
-            <Link to="/#services">
-              <Button variant="outline">View Services</Button>
-            </Link>
-            <Link to="/#contact">
-              <Button>Request Inspection</Button>
-            </Link>
           </CardContent>
         </Card>
       </main>
