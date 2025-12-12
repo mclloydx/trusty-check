@@ -9,7 +9,7 @@ const tiers = [
     id: "inspection",
     name: "Inspection Only",
     description: "Perfect when you just need verification",
-    price: "From $25",
+    price: "MWK 7,000",
     icon: Search,
     featured: false,
     features: [
@@ -25,7 +25,7 @@ const tiers = [
     id: "inspection-payment",
     name: "Inspection + Payment",
     description: "Most popular for remote buyers",
-    price: "From $40",
+    price: "MWK 10,000",
     icon: CreditCard,
     featured: true,
     badge: "Most Popular",
@@ -42,7 +42,7 @@ const tiers = [
     id: "full-service",
     name: "Full Service",
     description: "Complete end-to-end solution",
-    price: "From $60",
+    price: "MWK 10,000+",
     icon: Truck,
     featured: false,
     features: [

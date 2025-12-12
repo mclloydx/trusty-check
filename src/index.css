@@ -17,11 +17,11 @@
     --popover-foreground: 200 25% 15%;
 
     /* Deep Teal - Trust & Professionalism */
-    --primary: 175 55% 28%;
+    --primary: 193 88% 17%;
     --primary-foreground: 0 0% 100%;
 
-    /* Warm Amber - Premium & Success */
-    --secondary: 38 92% 55%;
+    /* Warm Green - Premium & Success */
+    --secondary: 92 98% 36%;
     --secondary-foreground: 200 25% 15%;
 
     --muted: 40 15% 93%;
@@ -36,29 +36,29 @@
 
     --border: 40 15% 88%;
     --input: 40 15% 88%;
-    --ring: 175 55% 28%;
+    --ring: 193 88% 17%;
 
     --radius: 0.75rem;
 
     /* Custom Stazama tokens */
     --teal-dark: 175 55% 22%;
     --teal-light: 175 45% 40%;
-    --amber-light: 38 92% 65%;
-    --amber-dark: 38 85% 45%;
+    --amber-light: 92 98% 65%;
+    --amber-dark: 92 98% 45%;
     --success: 145 65% 40%;
     --success-foreground: 0 0% 100%;
     
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(175 55% 28%) 0%, hsl(175 45% 35%) 50%, hsl(185 50% 30%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(193 88% 17%) 0%, hsl(193 88% 25%) 50%, hsl(193 88% 20%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(40 20% 98%) 100%);
-    --gradient-amber: linear-gradient(135deg, hsl(38 92% 55%) 0%, hsl(38 85% 50%) 100%);
+    --gradient-amber: linear-gradient(135deg, hsl(92 98% 36%) 0%, hsl(92 98% 45%) 100%);
     
     /* Shadows */
     --shadow-sm: 0 2px 8px -2px hsl(200 25% 15% / 0.08);
     --shadow-md: 0 8px 24px -8px hsl(200 25% 15% / 0.12);
     --shadow-lg: 0 16px 48px -12px hsl(200 25% 15% / 0.15);
-    --shadow-glow: 0 0 40px hsl(175 55% 28% / 0.15);
-    --shadow-amber: 0 8px 24px -8px hsl(38 92% 55% / 0.25);
+    --shadow-glow: 0 0 40px hsl(193 88% 17% / 0.15);
+    --shadow-amber: 0 8px 24px -8px hsl(92 98% 36% / 0.25);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -80,10 +80,10 @@
     --popover: 200 20% 14%;
     --popover-foreground: 40 20% 95%;
 
-    --primary: 175 55% 45%;
+    --primary: 193 88% 35%;
     --primary-foreground: 200 25% 10%;
 
-    --secondary: 38 92% 55%;
+    --secondary: 92 98% 55%;
     --secondary-foreground: 200 25% 10%;
 
     --muted: 200 20% 18%;
@@ -97,14 +97,14 @@
 
     --border: 200 20% 20%;
     --input: 200 20% 20%;
-    --ring: 175 55% 45%;
+    --ring: 193 88% 35%;
 
     --teal-dark: 175 55% 35%;
     --teal-light: 175 45% 55%;
-    --amber-light: 38 92% 60%;
-    --amber-dark: 38 85% 50%;
+    --amber-light: 92 98% 60%;
+    --amber-dark: 92 98% 50%;
     
-    --gradient-hero: linear-gradient(135deg, hsl(175 55% 22%) 0%, hsl(175 45% 28%) 50%, hsl(185 50% 25%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(193 88% 17%) 0%, hsl(193 88% 25%) 50%, hsl(193 88% 20%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(200 20% 14%) 0%, hsl(200 20% 12%) 100%);
 
     --sidebar-background: 240 5.9% 10%;
@@ -177,6 +177,61 @@
 
   .animate-pulse-slow {
     animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  /* Responsive Utility Classes */
+  .xs\:hidden {
+    @media (max-width: 479px) {
+      display: none;
+    }
+  }
+  
+  .xs\:inline {
+    @media (max-width: 479px) {
+      display: inline;
+    }
+  }
+  
+  .xs\:block {
+    @media (max-width: 479px) {
+      display: block;
+    }
+  }
+  
+  /* Card responsive adjustments */
+  .card-responsive {
+    @apply p-3 sm:p-4 md:p-6;
+  }
+  
+  .card-title-responsive {
+    @apply text-lg sm:text-xl md:text-2xl;
+  }
+  
+  .card-description-responsive {
+    @apply text-sm sm:text-base;
+  }
+  
+  /* Button responsive adjustments */
+  .btn-responsive {
+    @apply px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm md:px-4 md:py-2 md:text-base;
+  }
+  
+  .btn-icon-responsive {
+    @apply w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10;
+  }
+  
+  /* Table responsive adjustments */
+  .table-container-responsive {
+    @apply overflow-x-auto -mx-4 px-4;
+  }
+  
+  .table-cell-responsive {
+    @apply py-2 px-1 sm:px-2 md:px-4;
+  }
+  
+  /* Badge responsive adjustments */
+  .badge-responsive {
+    @apply text-xs py-0.5 px-1.5 sm:py-1 sm:px-2.5;
   }
 }
 

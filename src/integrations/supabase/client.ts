@@ -13,5 +13,14 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+    detectSessionInUrl: false, // Prevent URL manipulation
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'trusty-check-app',
+    },
+  },
+  db: {
+    schema: 'public',
+  },
 });

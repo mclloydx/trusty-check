@@ -50,11 +50,11 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2 text-background/70">
                 <Phone className="w-4 h-4" />
-                <span>+234 800 STAZAMA</span>
+                <span>+265 800 STAZAMA</span>
               </li>
               <li className="flex items-start gap-2 text-background/70">
                 <MapPin className="w-4 h-4 mt-1" />
-                <span>Lagos, Nigeria</span>
+                <span>Lilongwe, Malawi</span>
               </li>
             </ul>
           </div>
@@ -63,7 +63,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="pt-8 border-t border-background/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-background/50 text-sm">
-            © 2024 Stazama. All rights reserved.
+            © 2025 Stazama. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm">
             <a href="#" className="text-background/50 hover:text-background transition-colors">Privacy Policy</a>

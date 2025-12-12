@@ -70,7 +70,11 @@ export function HeroSection() {
               transition={{ delay: 0.6 }}
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
-              <Button size="xl" className="group">
+              <Button
+                size="xl"
+                className="group"
+                onClick={() => document.getElementById('request')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 Request Inspection
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -142,7 +146,7 @@ export function HeroSection() {
                   </div>
                   <div>
                     <p className="font-medium text-foreground text-sm">Agent James</p>
-                    <p className="text-xs text-muted-foreground">Lagos, Nigeria</p>
+                    <p className="text-xs text-muted-foreground">Lilongwe, Malawi</p>
                   </div>
                 </div>
               </motion.div>

@@ -22,12 +22,19 @@ export type Database = {
           customer_name: string
           delivery_notes: string | null
           id: string
+          payment_method: string | null
+          payment_received: boolean | null
+          payment_verified: boolean | null
           product_details: string
+          receipt_number: string | null
+          receipt_uploaded_at: string | null
+          receipt_url: string | null
           service_fee: number
           service_tier: string
           status: Database["public"]["Enums"]["request_status"]
           store_location: string
           store_name: string
+          tracking_id: string | null
           updated_at: string
           user_id: string | null
           whatsapp: string
@@ -39,12 +46,19 @@ export type Database = {
           customer_name: string
           delivery_notes?: string | null
           id?: string
+          payment_method?: string | null
+          payment_received?: boolean | null
+          payment_verified?: boolean | null
           product_details: string
+          receipt_number?: string | null
+          receipt_uploaded_at?: string | null
+          receipt_url?: string | null
           service_fee: number
           service_tier?: string
           status?: Database["public"]["Enums"]["request_status"]
           store_location: string
           store_name: string
+          tracking_id?: string | null
           updated_at?: string
           user_id?: string | null
           whatsapp: string
@@ -56,12 +70,19 @@ export type Database = {
           customer_name?: string
           delivery_notes?: string | null
           id?: string
+          payment_method?: string | null
+          payment_received?: boolean | null
+          payment_verified?: boolean | null
           product_details?: string
+          receipt_number?: string | null
+          receipt_uploaded_at?: string | null
+          receipt_url?: string | null
           service_fee?: number
           service_tier?: string
           status?: Database["public"]["Enums"]["request_status"]
           store_location?: string
           store_name?: string
+          tracking_id?: string | null
           updated_at?: string
           user_id?: string | null
           whatsapp?: string

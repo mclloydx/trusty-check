@@ -1,110 +1,155 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Send, User, MapPin, Store, Package, Phone, MessageCircle, Loader2 } from "lucide-react";
+import { Send, User, MapPin, Store, Package, Phone, MessageCircle, Loader2, Copy, Check } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const inspectionRequestSchema = z.object({
+  customerName: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
+  whatsapp: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+  customerAddress: z.string().optional(),
+  storeName: z.string().min(2, "Store name must be at least 2 characters").max(100, "Store name too long"),
+  storeLocation: z.string().min(5, "Location must be at least 5 characters").max(200, "Location too long"),
+  productDetails: z.string().min(10, "Please provide more details about the product").max(1000, "Description too long"),
+  serviceTier: z.enum(["inspection", "inspection-payment", "full-service"]),
+  deliveryNotes: z.string().optional(),
+  paymentMethod: z.string().optional(),
+});
+
+type InspectionRequestFormData = z.infer<typeof inspectionRequestSchema>;
 
 export function InspectionRequestForm() {
   const { toast } = useToast();
   const { user, profile } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    customerName: "",
-    whatsapp: "",
-    customerAddress: "",
-    storeName: "",
-    storeLocation: "",
-    productDetails: "",
-    serviceTier: "inspection",
-    deliveryNotes: "",
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [trackingId, setTrackingId] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch,
+    reset,
+  } = useForm<InspectionRequestFormData>({
+    resolver: zodResolver(inspectionRequestSchema),
+    defaultValues: {
+      customerName: "",
+      whatsapp: "",
+      customerAddress: "",
+      storeName: "",
+      storeLocation: "",
+      productDetails: "",
+      serviceTier: "inspection",
+      deliveryNotes: "",
+      paymentMethod: "",
+    },
   });
 
+  const serviceTier = watch("serviceTier");
+
   const serviceFees: Record<string, number> = {
-    inspection: 25,
-    "inspection-payment": 40,
-    "full-service": 60,
+    inspection: 7000,
+    "inspection-payment": 10000,
+    "full-service": 10000,
   };
 
   const serviceFeeLabels: Record<string, string> = {
-    inspection: "$25",
-    "inspection-payment": "$40",
-    "full-service": "$60+",
+    inspection: "MWK 7,000",
+    "inspection-payment": "MWK 10,000",
+    "full-service": "MWK 10,000+",
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(trackingId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
+  const onSubmit = async (data: InspectionRequestFormData) => {
+    console.log('Form submission started', data);
     try {
-      const { error } = await supabase
+      // Generate tracking ID for all users
+      const timestamp = Date.now().toString(36).toUpperCase();
+      const randomStr = Math.random().toString(36).substring(2, 11).toUpperCase();
+      const trackingId = `STZ-${timestamp}-${randomStr}`;
+      console.log('Generated tracking ID:', trackingId);
+
+      const insertData = {
+        user_id: user?.id || null,
+        customer_name: data.customerName,
+        whatsapp: data.whatsapp,
+        customer_address: data.customerAddress || null,
+        store_name: data.storeName,
+        store_location: data.storeLocation,
+        product_details: data.productDetails,
+        service_tier: data.serviceTier,
+        service_fee: serviceFees[data.serviceTier],
+        delivery_notes: data.deliveryNotes || null,
+        payment_method: data.paymentMethod || null,
+        tracking_id: trackingId,
+      };
+      console.log('Insert data:', insertData);
+
+      console.log('About to call supabase insert');
+      // Add a timeout to prevent hanging
+      const insertPromise = supabase
         .from('inspection_requests')
-        .insert({
-          user_id: user?.id || null,
-          customer_name: formData.customerName,
-          whatsapp: formData.whatsapp,
-          customer_address: formData.customerAddress || null,
-          store_name: formData.storeName,
-          store_location: formData.storeLocation,
-          product_details: formData.productDetails,
-          service_tier: formData.serviceTier,
-          service_fee: serviceFees[formData.serviceTier],
-          delivery_notes: formData.deliveryNotes || null,
-        });
+        .insert(insertData);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Insert operation timed out')), 10000)
+      );
+      
+      try {
+        const insertResult = await Promise.race([insertPromise, timeoutPromise]) as any;
+        console.log('Supabase insert completed, result:', insertResult);
 
-      if (error) throw error;
+        if (insertResult.error) {
+          console.error('Supabase error:', insertResult.error);
+          throw insertResult.error;
+        }
+      } catch (insertError) {
+        console.error('Error during Supabase insert:', insertError);
+        throw insertError;
+      }
 
-      toast({
-        title: "Request Submitted!",
-        description: user 
-          ? "Your request has been saved. Track it in your dashboard." 
-          : "We'll contact you via WhatsApp shortly.",
-      });
-
+      console.log('Request submitted successfully');
+      // Set tracking ID and show modal
+      setTrackingId(trackingId);
+      setShowTrackingModal(true);
+      
       // Reset form
-      setFormData({
-        customerName: "",
-        whatsapp: "",
-        customerAddress: "",
-        storeName: "",
-        storeLocation: "",
-        productDetails: "",
-        serviceTier: "inspection",
-        deliveryNotes: "",
-      });
+      reset();
     } catch (error) {
       console.error('Error submitting request:', error);
       toast({
         title: "Error",
-        description: "Failed to submit request. Please try again.",
+        description: `Failed to submit request: ${error.message || 'Please try again.'}`,
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
-  };
-
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   // Pre-fill form with user profile data if logged in
-  useState(() => {
+  useEffect(() => {
     if (profile) {
-      setFormData(prev => ({
-        ...prev,
-        customerName: profile.full_name || "",
-        whatsapp: profile.phone || "",
-        customerAddress: profile.address || "",
-      }));
+      setValue("customerName", profile.full_name || "");
+      setValue("whatsapp", profile.phone || "");
+      setValue("customerAddress", profile.address || "");
     }
-  });
+  }, [profile, setValue]);
 
   return (
     <section id="request" className="py-24 bg-muted/30">
@@ -147,7 +192,7 @@ export function InspectionRequestForm() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Customer Information */}
                 <div className="space-y-4">
                   <h3 className="font-semibold text-foreground flex items-center gap-2">
@@ -160,68 +205,61 @@ export function InspectionRequestForm() {
                       <Input
                         id="customerName"
                         placeholder="John Doe"
-                        value={formData.customerName}
-                        onChange={(e) => handleChange("customerName", e.target.value)}
-                        required
+                        {...register("customerName")}
                       />
+                      {errors.customerName && (
+                        <p className="text-sm text-red-600">{errors.customerName.message}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="whatsapp">WhatsApp Number</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="whatsapp"
-                          placeholder="+234 800 000 0000"
-                          className="pl-10"
-                          value={formData.whatsapp}
-                          onChange={(e) => handleChange("whatsapp", e.target.value)}
-                          required
-                        />
-                      </div>
+                      <Input
+                        id="whatsapp"
+                        placeholder="+265 999 123 456"
+                        {...register("whatsapp")}
+                      />
+                      {errors.whatsapp && (
+                        <p className="text-sm text-red-600">{errors.whatsapp.message}</p>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="customerAddress">Your Address (for delivery)</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Textarea
-                        id="customerAddress"
-                        placeholder="Enter your full delivery address"
-                        className="pl-10 min-h-[80px]"
-                        value={formData.customerAddress}
-                        onChange={(e) => handleChange("customerAddress", e.target.value)}
-                      />
-                    </div>
+                    <Label htmlFor="customerAddress">Delivery Address (Optional)</Label>
+                    <Input
+                      id="customerAddress"
+                      placeholder="House number, street, city"
+                      {...register("customerAddress")}
+                    />
                   </div>
                 </div>
 
-                {/* Seller Information */}
+                {/* Store Information */}
                 <div className="space-y-4 pt-4 border-t border-border">
                   <h3 className="font-semibold text-foreground flex items-center gap-2">
                     <Store className="w-4 h-4 text-primary" />
-                    Seller Information
+                    Store Information
                   </h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="storeName">Store/Seller Name</Label>
-                      <Input
-                        id="storeName"
-                        placeholder="TechStore Lagos"
-                        value={formData.storeName}
-                        onChange={(e) => handleChange("storeName", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="storeLocation">Store Location</Label>
-                      <Input
-                        id="storeLocation"
-                        placeholder="Victoria Island, Lagos"
-                        value={formData.storeLocation}
-                        onChange={(e) => handleChange("storeLocation", e.target.value)}
-                        required
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="storeName">Store Name</Label>
+                    <Input
+                      id="storeName"
+                      placeholder="e.g., Samsung Store, Hi-Fi Centre"
+                      {...register("storeName")}
+                    />
+                    {errors.storeName && (
+                      <p className="text-sm text-red-600">{errors.storeName.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="storeLocation">Store Location</Label>
+                    <Input
+                      id="storeLocation"
+                      placeholder="City, Area, Landmark"
+                      {...register("storeLocation")}
+                    />
+                    {errors.storeLocation && (
+                      <p className="text-sm text-red-600">{errors.storeLocation.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -232,15 +270,16 @@ export function InspectionRequestForm() {
                     Product Details
                   </h3>
                   <div className="space-y-2">
-                    <Label htmlFor="productDetails">What are you buying?</Label>
+                    <Label htmlFor="productDetails">Product Description</Label>
                     <Textarea
                       id="productDetails"
                       placeholder="Describe the product, including model, color, specifications, expected price, etc."
                       className="min-h-[100px]"
-                      value={formData.productDetails}
-                      onChange={(e) => handleChange("productDetails", e.target.value)}
-                      required
+                      {...register("productDetails")}
                     />
+                    {errors.productDetails && (
+                      <p className="text-sm text-red-600">{errors.productDetails.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -248,8 +287,8 @@ export function InspectionRequestForm() {
                 <div className="space-y-4 pt-4 border-t border-border">
                   <h3 className="font-semibold text-foreground">Select Service</h3>
                   <RadioGroup
-                    value={formData.serviceTier}
-                    onValueChange={(value) => handleChange("serviceTier", value)}
+                    value={serviceTier}
+                    onValueChange={(value) => setValue("serviceTier", value as any)}
                     className="space-y-3"
                   >
                     <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
@@ -257,48 +296,61 @@ export function InspectionRequestForm() {
                       <Label htmlFor="inspection" className="flex-1 cursor-pointer">
                         <span className="font-medium text-foreground">Inspection Only</span>
                         <span className="text-muted-foreground text-sm block">
-                          Verify product condition, you arrange delivery
+                          Verify authenticity only
                         </span>
                       </Label>
-                      <span className="font-semibold text-primary">$25</span>
+                      <span className="font-semibold text-primary">MWK 7,000</span>
                     </div>
-                    <div className="flex items-center space-x-3 p-4 rounded-xl border-2 border-secondary bg-secondary/5 cursor-pointer">
+                    <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
                       <RadioGroupItem value="inspection-payment" id="inspection-payment" />
                       <Label htmlFor="inspection-payment" className="flex-1 cursor-pointer">
                         <span className="font-medium text-foreground">Inspection + Payment</span>
                         <span className="text-muted-foreground text-sm block">
-                          Verify and pay seller on your behalf
+                          Verify and pay through us (includes delivery quote)
                         </span>
                       </Label>
-                      <span className="font-semibold text-secondary">$40</span>
+                      <span className="font-semibold text-primary">MWK 10,000</span>
                     </div>
                     <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
                       <RadioGroupItem value="full-service" id="full-service" />
                       <Label htmlFor="full-service" className="flex-1 cursor-pointer">
                         <span className="font-medium text-foreground">Full Service</span>
                         <span className="text-muted-foreground text-sm block">
-                          Verify, pay, and deliver to you
+                          Verify, pay, and deliver to you (delivery quoted separately)
                         </span>
                       </Label>
-                      <span className="font-semibold text-primary">$60+</span>
+                      <span className="font-semibold text-primary">MWK 10,000+</span>
                     </div>
                   </RadioGroup>
                 </div>
 
-                {/* Delivery Notes (shown for full service) */}
-                {formData.serviceTier === "full-service" && (
+                {/* Payment Method (shown for payment services) */}
+                {(serviceTier === "inspection-payment" || serviceTier === "full-service") && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
-                    className="space-y-2"
+                    className="space-y-2 pt-4 border-t border-border"
                   >
-                    <Label htmlFor="deliveryNotes">Delivery Preferences</Label>
-                    <Textarea
-                      id="deliveryNotes"
-                      placeholder="Shipping method preference, urgency, packaging requirements..."
-                      value={formData.deliveryNotes}
-                      onChange={(e) => handleChange("deliveryNotes", e.target.value)}
-                    />
+                    <Label htmlFor="paymentMethod">Preferred Payment Method</Label>
+                    <select
+                      id="paymentMethod"
+                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      {...register("paymentMethod")}
+                    >
+                      <option value="">Select payment method</option>
+                      <option value="airtel_money">Airtel Money</option>
+                      <option value="tnm_mpamba">TNM Mpamba</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="cash_delivery">Cash on Delivery</option>
+                    </select>
+                    <div className="space-y-2">
+                      <Label htmlFor="deliveryNotes">Delivery Notes (Optional)</Label>
+                      <Textarea
+                        id="deliveryNotes"
+                        placeholder="Any special delivery instructions..."
+                        {...register("deliveryNotes")}
+                      />
+                    </div>
                   </motion.div>
                 )}
 
@@ -307,7 +359,7 @@ export function InspectionRequestForm() {
                   <div className="flex items-center justify-between mb-6">
                     <span className="text-muted-foreground">Service Fee</span>
                     <span className="text-2xl font-bold text-foreground">
-                      {serviceFeeLabels[formData.serviceTier]}
+                      {serviceFeeLabels[serviceTier]}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-4">
@@ -332,6 +384,47 @@ export function InspectionRequestForm() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Tracking ID Modal */}
+      <Dialog open={showTrackingModal} onOpenChange={setShowTrackingModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="w-5 h-5 text-green-500" />
+              Request Submitted Successfully!
+            </DialogTitle>
+            <DialogDescription>
+              Your inspection request has been received. Save this tracking ID for future reference.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <code className="text-lg font-mono">{trackingId}</code>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={copyToClipboard}
+                className="ml-2"
+              >
+                {copied ? (
+                  <Check className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {user 
+                ? "You can also track this request in your dashboard."
+                : "We'll contact you via WhatsApp shortly with updates."
+              }
+            </p>
+            <Button onClick={() => setShowTrackingModal(false)}>
+              Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
