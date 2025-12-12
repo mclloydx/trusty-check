@@ -1,14 +1,14 @@
 import { motion } from "framer-motion";
-import { Shield, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Services", href: "#services" },
-  { label: "Request Inspection", href: "#request" },
+  { label: "How It Works", href: "/how-it-works" },
+  { label: "Services", href: "/services" },
+  { label: "Request Inspection", href: "/request-inspection" },
   { label: "Track Order", href: "/track" },
 ];
 
@@ -23,7 +23,7 @@ export function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-hero-gradient flex items-center justify-center shadow-glow">
-              <Shield className="w-5 h-5 text-primary-foreground" />
+              <img src="/images/white.svg" alt="Stazama Logo" className="w-6 h-6" />
             </div>
             <span className="text-xl font-bold text-foreground">Stazama</span>
           </Link>
@@ -31,13 +31,13 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.href}
-                href={link.href}
+                to={link.href}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -81,14 +81,14 @@ export function Header() {
           >
             <nav className="flex flex-col gap-4">
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.href}
-                  href={link.href}
+                  to={link.href}
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setIsOpen(false)}
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 {!loading && (

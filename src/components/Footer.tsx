@@ -1,4 +1,5 @@
-import { Shield, Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function Footer() {
   return (
@@ -9,7 +10,7 @@ export function Footer() {
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
+                <img src="/images/white.svg" alt="Stazama Logo" className="w-6 h-6" />
               </div>
               <span className="text-xl font-bold">Stazama</span>
             </div>
@@ -33,10 +34,10 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-3">
-              <li><a href="#how-it-works" className="text-background/70 hover:text-background transition-colors">How It Works</a></li>
-              <li><a href="#services" className="text-background/70 hover:text-background transition-colors">Services</a></li>
-              <li><a href="#request" className="text-background/70 hover:text-background transition-colors">Request Inspection</a></li>
-              <li><a href="#" className="text-background/70 hover:text-background transition-colors">Become an Agent</a></li>
+              <li><Link to="/how-it-works" className="text-background/70 hover:text-background transition-colors">How It Works</Link></li>
+              <li><Link to="/services" className="text-background/70 hover:text-background transition-colors">Services</Link></li>
+              <li><Link to="/request-inspection" className="text-background/70 hover:text-background transition-colors">Request Inspection</Link></li>
+              <li><Link to="/become-agent" className="text-background/70 hover:text-background transition-colors">Become an Agent</Link></li>
             </ul>
           </div>
 
@@ -66,9 +67,9 @@ export function Footer() {
             © 2025 Stazama. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm">
-            <a href="#" className="text-background/50 hover:text-background transition-colors">Privacy Policy</a>
-            <a href="#" className="text-background/50 hover:text-background transition-colors">Terms of Service</a>
-            <a href="#" className="text-background/50 hover:text-background transition-colors">Refund Policy</a>
+            <Link to="/privacy-policy" className="text-background/50 hover:text-background transition-colors">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="text-background/50 hover:text-background transition-colors">Terms of Service</Link>
+            <Link to="/refund-policy" className="text-background/50 hover:text-background transition-colors">Refund Policy</Link>
           </div>
         </div>
       </div>

@@ -74,11 +74,8 @@ export default function UserDashboard() {
     address: '',
   });
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
+  // Authentication is now handled by ProtectedRoute component
+  // This effect can be removed as it's redundant
 
   useEffect(() => {
     if (profile) {
@@ -310,7 +307,7 @@ export default function UserDashboard() {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link to="/" className="flex items-center gap-2">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
-                <User className="w-4 h-4 sm:w-6 sm:h-6 text-green-500" />
+                <img src="/images/Dark.svg" alt="Stazama Logo" className="w-4 h-4 sm:w-6 sm:h-6" />
               </div>
               <span className="font-bold text-lg sm:text-xl">My Dashboard</span>
             </Link>

@@ -8,10 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
-import { 
-  Users, 
-  Briefcase, 
-  LogOut, 
+import {
+  Users,
+  LogOut,
   Loader2,
   ClipboardList,
   Calendar,
@@ -116,11 +115,8 @@ export default function AgentDashboard() {
     });
   }, [requests, requestFilter]);
 
-  useEffect(() => {
-    if (!loading && (!user || (role !== 'agent' && role !== 'admin'))) {
-      navigate('/dashboard');
-    }
-  }, [user, role, loading, navigate]);
+  // Authentication is now handled by ProtectedRoute component
+  // This effect can be removed as it's redundant
 
   useEffect(() => {
     if (user && (role === 'agent' || role === 'admin')) {
@@ -574,7 +570,7 @@ export default function AgentDashboard() {
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2">
               <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                <Briefcase className="w-6 h-6 text-blue-500" />
+                <img src="/images/Dark.svg" alt="Stazama Logo" className="w-6 h-6" />
               </div>
               <span className="font-bold text-xl">Agent Dashboard</span>
             </Link>

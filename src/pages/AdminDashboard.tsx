@@ -8,10 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
-import { 
-  Users, 
-  Shield, 
-  LogOut, 
+import {
+  Users,
+  LogOut,
   Home,
   UserCog,
   Loader2,
@@ -24,7 +23,8 @@ import {
   XCircle,
   AlertCircle,
   Bell,
-  ClipboardList
+  ClipboardList,
+  Shield
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -122,11 +122,8 @@ export default function AdminDashboard() {
     });
   }, [requests, requestFilter]);
 
-  useEffect(() => {
-    if (!loading && (!user || role !== 'admin')) {
-      navigate('/dashboard');
-    }
-  }, [user, role, loading, navigate]);
+  // Authentication is now handled by ProtectedRoute component
+  // This effect can be removed as it's redundant
 
   useEffect(() => {
     if (user && role === 'admin') {
@@ -601,7 +598,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2">
               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Shield className="w-6 h-6 text-primary" />
+                <img src="/images/Dark.svg" alt="Stazama Logo" className="w-6 h-6" />
               </div>
               <span className="font-bold text-xl">Admin Panel</span>
             </Link>

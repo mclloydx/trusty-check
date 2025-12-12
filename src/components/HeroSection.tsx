@@ -96,7 +96,7 @@ export function HeroSection() {
               <div className="bg-card rounded-3xl shadow-card-hover p-8 border border-border">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-2xl bg-hero-gradient flex items-center justify-center">
-                    <Shield className="w-6 h-6 text-primary-foreground" />
+                    <img src="/images/white.svg" alt="Stazama Logo" className="w-6 h-6" />
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">Inspection Complete</p>
