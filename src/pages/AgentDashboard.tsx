@@ -95,6 +95,11 @@ export default function AgentDashboard() {
   const [activeTab, setActiveTab] = useState<'clients' | 'requests'>('requests');
   const [requestFilter, setRequestFilter] = useState<'all' | 'pending' | 'active' | 'completed' | 'cancelled'>('all');
 
+  // Show warning if supabase is not available
+  if (!supabase) {
+    console.warn('Supabase client is not available. Agent dashboard features will be disabled.');
+  }
+
   // Filter requests based on selected filter - Moved to correct position to fix hook order
   const filteredRequests = useMemo(() => {
     if (requestFilter === 'all') return requests;
@@ -130,6 +135,13 @@ export default function AgentDashboard() {
   }, [user, role, activeTab]);
 
   const fetchClients = async () => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping clients fetch');
+      setLoadingClients(false);
+      return;
+    }
+
     setLoadingClients(true);
     try {
       // Agents can view profiles with role 'user'
@@ -167,6 +179,12 @@ export default function AgentDashboard() {
   };
 
   const fetchAgents = async () => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping agents fetch');
+      return;
+    }
+
     try {
       // Fetch all agents
       const { data: agentRoles, error: rolesError } = await supabase
@@ -193,6 +211,13 @@ export default function AgentDashboard() {
   };
 
   const fetchRequests = async () => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping requests fetch');
+      setLoadingRequests(false);
+      return;
+    }
+
     setLoadingRequests(true);
     try {
       // Fetch all requests - assigned and unassigned
@@ -214,7 +239,11 @@ export default function AgentDashboard() {
           created_at,
           payment_received,
           payment_method,
-          receipt_number
+          receipt_number,
+          tracking_id,
+          profiles!inspection_requests_assigned_agent_id_fkey (
+            full_name
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -264,61 +293,106 @@ export default function AgentDashboard() {
     }
   };
 
-  const updateRequestStatus = async (requestId: string, newStatus: string) => {
+  const assignAgentToRequest = async (requestId: string, agentId: string | null) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping agent assignment');
+      toast({
+        title: "Error",
+        description: "Agent assignment is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Check if request is already completed
-      const request = requests.find(r => r.id === requestId);
-      if (request?.status === 'completed') {
-        toast({
-          title: "Request Already Completed",
-          description: "This request has already been completed and cannot be updated.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check if trying to mark as completed without payment
-      if (newStatus === 'completed' && request?.service_tier !== 'inspection' && !request?.payment_received) {
-        toast({
-          title: "Payment Not Verified",
-          description: "Please verify payment before marking request as completed.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { error } = await supabase
         .from('inspection_requests')
-        .update({ status: newStatus as 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled' })
+        .update({ 
+          assigned_agent_id: agentId,
+          status: agentId ? 'assigned' : 'pending'
+        })
         .eq('id', requestId);
 
       if (error) throw error;
 
+      // Update local state
       setRequests(requests.map(r => 
-        r.id === requestId ? { ...r, status: newStatus } : r
+        r.id === requestId ? { ...r, assigned_agent_id: agentId, status: agentId ? 'assigned' : 'pending' } : r
       ));
 
       toast({
-        title: "Status updated",
-        description: "Request status has been updated successfully",
+        title: "Request Reassigned",
+        description: "Request has been reassigned successfully",
       });
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error('Error reassigning request:', error);
       toast({
         title: "Error",
-        description: "Failed to update request status",
+        description: "Failed to reassign request. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const updateRequestPayment = async (requestId: string, isPaid: boolean) => {
+  const updateRequestStatus = async (requestId: string, status: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping status update');
+      toast({
+        title: "Error",
+        description: "Status update is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('inspection_requests')
+        .update({ status })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      // Update local state
+      setRequests(requests.map(r => 
+        r.id === requestId ? { ...r, status } : r
+      ));
+
+      toast({
+        title: "Status Updated",
+        description: `Request status updated to ${statusConfig[status]?.label || status}`,
+      });
+    } catch (error) {
+      console.error('Error updating request status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update request status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const markPaymentReceived = async (requestId: string, receiptNumber: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping payment marking');
+      toast({
+        title: "Error",
+        description: "Payment marking is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('inspection_requests')
         .update({ 
-          payment_received: isPaid,
-          receipt_number: isPaid ? `RCT-${Date.now()}` : null
+          payment_received: true,
+          receipt_number: receiptNumber,
+          receipt_uploaded_at: new Date().toISOString()
         })
         .eq('id', requestId);
 
@@ -328,26 +402,105 @@ export default function AgentDashboard() {
       setRequests(requests.map(r => 
         r.id === requestId ? { 
           ...r, 
-          payment_received: isPaid,
-          receipt_number: isPaid ? `RCT-${Date.now()}` : null
+          payment_received: true,
+          receipt_number: receiptNumber,
+          receipt_uploaded_at: new Date().toISOString()
         } : r
       ));
 
       toast({
-        title: "Payment updated",
-        description: `Request marked as ${isPaid ? 'paid' : 'unpaid'} successfully`,
+        title: "Payment Marked",
+        description: "Payment has been marked as received",
       });
     } catch (error) {
-      console.error('Error updating payment:', error);
+      console.error('Error marking payment:', error);
       toast({
         title: "Error",
-        description: "Failed to update payment status",
+        description: "Failed to mark payment. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const downloadReceipt = (request: InspectionRequest, agent: Agent | null = null) => {
+  const completeRequest = async (requestId: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping request completion');
+      toast({
+        title: "Error",
+        description: "Request completion is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('inspection_requests')
+        .update({ status: 'completed' })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      // Update local state
+      setRequests(requests.map(r => 
+        r.id === requestId ? { ...r, status: 'completed' } : r
+      ));
+
+      toast({
+        title: "Request Completed",
+        description: "Request has been marked as completed",
+      });
+    } catch (error) {
+      console.error('Error completing request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const cancelRequest = async (requestId: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping request cancellation');
+      toast({
+        title: "Error",
+        description: "Request cancellation is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('inspection_requests')
+        .update({ status: 'cancelled' })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      // Update local state
+      setRequests(requests.map(r => 
+        r.id === requestId ? { ...r, status: 'cancelled' } : r
+      ));
+
+      toast({
+        title: "Request Cancelled",
+        description: "Request has been cancelled",
+      });
+    } catch (error) {
+      console.error('Error cancelling request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadReceipt = (request: InspectionRequest) => {
     const doc = new jsPDF();
 
     // Stazama branding
@@ -415,18 +568,16 @@ export default function AgentDashboard() {
     yPos += 8;
     doc.text(`Payment Method: ${request.payment_method || 'N/A'}`, 20, yPos);
     yPos += 8;
-    doc.text(`Status: ${request.payment_received ? 'PAID' : 'PENDING'}`, 20, yPos);
+    doc.text(`Status: PAID`, 20, yPos);
     yPos += 15;
 
     // Agent details
-    if (agent) {
+    if (profile?.full_name) {
       doc.setFont('helvetica', 'bold');
-      doc.text('PROCESSED BY', 20, yPos);
+      doc.text('AGENT DETAILS', 20, yPos);
       yPos += 10;
       doc.setFont('helvetica', 'normal');
-      doc.text(`Agent: ${agent.full_name || 'N/A'}`, 20, yPos);
-      yPos += 8;
-      doc.text(`Email: ${agent.email || 'N/A'}`, 20, yPos);
+      doc.text(`Handled by: ${profile.full_name}`, 20, yPos);
       yPos += 15;
     }
 
@@ -527,40 +678,6 @@ export default function AgentDashboard() {
       supabase.removeChannel(channel);
     };
   }, [user?.id, activeTab]);
-
-  // New function to allow admin or agent to reassign a request
-  const assignAgentToRequest = async (requestId: string, agentId: string | null) => {
-    try {
-      const { error } = await supabase
-        .from('inspection_requests')
-        .update({ 
-          assigned_agent_id: agentId,
-          status: agentId ? 'assigned' : 'pending'
-        })
-        .eq('id', requestId);
-
-      if (error) throw error;
-
-      // Update local state
-      setRequests(requests.map(r => 
-        r.id === requestId ? { ...r, assigned_agent_id: agentId, status: agentId ? 'assigned' : 'pending' } : r
-      ));
-
-      toast({
-        title: "Request Reassigned",
-        description: "Request has been reassigned successfully",
-      });
-    } catch (error) {
-      console.error('Error reassigning request:', error);
-      toast({
-        title: "Error",
-        description: "Failed to reassign request",
-        variant: "destructive",
-      });
-    }
-  };
-
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -809,7 +926,7 @@ export default function AgentDashboard() {
                                       <Button
                                         size="sm"
                                         variant="outline"
-                                        onClick={() => downloadReceipt(request, getAgentName(request.assigned_agent_id) !== 'Unassigned' ? agents.find(a => a.id === request.assigned_agent_id) : null)}
+                                        onClick={() => downloadReceipt(request)}
                                         className="text-xs h-6"
                                       >
                                         Download

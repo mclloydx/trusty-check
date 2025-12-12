@@ -2,6 +2,11 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+// Check if supabase client is available
+if (!supabase) {
+  console.warn('Supabase client is not available. Authentication features will be disabled.');
+}
+
 type AppRole = 'admin' | 'agent' | 'user';
 
 interface Profile {
@@ -34,6 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (userId: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping user data fetch');
+      return;
+    }
+
     try {
       const { data: profileData } = await supabase
         .from('profiles')
@@ -60,6 +71,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
@@ -85,15 +102,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      // Only unsubscribe if supabase is available
+      if (supabase) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    // Return early if supabase is not available
+    if (!supabase) {
+      return { error: new Error('Authentication is not available') };
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error as Error | null };
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
+    // Return early if supabase is not available
+    if (!supabase) {
+      return { error: new Error('Authentication is not available') };
+    }
+
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -110,6 +142,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Return early if supabase is not available
+    if (!supabase) {
+      setProfile(null);
+      setRole(null);
+      return;
+    }
+
     await supabase.auth.signOut();
     setProfile(null);
     setRole(null);

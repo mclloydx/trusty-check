@@ -1,94 +1,99 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Send, User, MapPin, Store, Package, Phone, MessageCircle, Loader2, Copy, Check } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import { MessageCircle, Store, Package, User, Loader2, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-const inspectionRequestSchema = z.object({
-  customerName: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
+// Show warning if supabase is not available
+if (!supabase) {
+  console.warn('Supabase client is not available. Request submission will be disabled.');
+}
+
+const serviceFees = {
+  inspection: 2000,
+  "inspection-payment": 3500,
+  "full-service": 5000,
+};
+
+const formSchema = z.object({
+  customerName: z.string().min(2, "Name must be at least 2 characters"),
   whatsapp: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
   customerAddress: z.string().optional(),
-  storeName: z.string().min(2, "Store name must be at least 2 characters").max(100, "Store name too long"),
-  storeLocation: z.string().min(5, "Location must be at least 5 characters").max(200, "Location too long"),
-  productDetails: z.string().min(10, "Please provide more details about the product").max(1000, "Description too long"),
-  serviceTier: z.enum(["inspection", "inspection-payment", "full-service"]),
+  storeName: z.string().min(2, "Store name must be at least 2 characters"),
+  storeLocation: z.string().min(5, "Location must be at least 5 characters"),
+  productDetails: z.string().min(10, "Product details must be at least 10 characters"),
+  serviceTier: z.enum(["inspection", "inspection-payment", "full-service"], {
+    required_error: "Please select a service tier",
+  }),
   deliveryNotes: z.string().optional(),
   paymentMethod: z.string().optional(),
 });
 
-type InspectionRequestFormData = z.infer<typeof inspectionRequestSchema>;
+type FormData = z.infer<typeof formSchema>;
 
-export function InspectionRequestForm() {
-  const { toast } = useToast();
+const generateTrackingId = () => {
+  const prefix = "STZ";
+  const timestamp = Date.now().toString().slice(-10);
+  const randomChars = Math.random().toString(36).substring(2, 7).toUpperCase();
+  return `${prefix}-${timestamp}-${randomChars}`;
+};
+
+export const InspectionRequestForm = () => {
   const { user, profile } = useAuth();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [trackingId, setTrackingId] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [serviceTier, setServiceTier] = useState<"inspection" | "inspection-payment" | "full-service">("inspection");
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-    setValue,
-    watch,
+    formState: { errors },
     reset,
-  } = useForm<InspectionRequestFormData>({
-    resolver: zodResolver(inspectionRequestSchema),
+    setValue,
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      customerName: "",
-      whatsapp: "",
-      customerAddress: "",
-      storeName: "",
-      storeLocation: "",
-      productDetails: "",
       serviceTier: "inspection",
-      deliveryNotes: "",
-      paymentMethod: "",
     },
   });
 
-  const serviceTier = watch("serviceTier");
+  const onSubmit = async (data: FormData) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping submission');
+      toast({
+        title: "Error",
+        description: "Request submission is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const serviceFees: Record<string, number> = {
-    inspection: 7000,
-    "inspection-payment": 10000,
-    "full-service": 10000,
-  };
-
-  const serviceFeeLabels: Record<string, string> = {
-    inspection: "MWK 7,000",
-    "inspection-payment": "MWK 10,000",
-    "full-service": "MWK 10,000+",
-  };
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(trackingId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const onSubmit = async (data: InspectionRequestFormData) => {
-    console.log('Form submission started', data);
+    setIsSubmitting(true);
     try {
-      // Generate tracking ID for all users
-      const timestamp = Date.now().toString(36).toUpperCase();
-      const randomStr = Math.random().toString(36).substring(2, 11).toUpperCase();
-      const trackingId = `STZ-${timestamp}-${randomStr}`;
+      const trackingId = generateTrackingId();
       console.log('Generated tracking ID:', trackingId);
-
+      
       const insertData = {
-        user_id: user?.id || null,
         customer_name: data.customerName,
         whatsapp: data.whatsapp,
         customer_address: data.customerAddress || null,
@@ -100,6 +105,7 @@ export function InspectionRequestForm() {
         delivery_notes: data.deliveryNotes || null,
         payment_method: data.paymentMethod || null,
         tracking_id: trackingId,
+        user_id: user?.id || null,
       };
       console.log('Insert data:', insertData);
 
@@ -132,13 +138,15 @@ export function InspectionRequestForm() {
       
       // Reset form
       reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting request:', error);
       toast({
         title: "Error",
         description: `Failed to submit request: ${error.message || 'Please try again.'}`,
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -288,97 +296,100 @@ export function InspectionRequestForm() {
                   <h3 className="font-semibold text-foreground">Select Service</h3>
                   <RadioGroup
                     value={serviceTier}
-                    onValueChange={(value) => setValue("serviceTier", value as any)}
+                    onValueChange={(value) => {
+                      setValue("serviceTier", value as any);
+                      setServiceTier(value as any);
+                    }}
                     className="space-y-3"
                   >
                     <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
-                      <RadioGroupItem value="inspection" id="inspection" />
-                      <Label htmlFor="inspection" className="flex-1 cursor-pointer">
-                        <span className="font-medium text-foreground">Inspection Only</span>
-                        <span className="text-muted-foreground text-sm block">
-                          Verify authenticity only
-                        </span>
+                      <RadioGroupItem value="inspection" id="inspection" className="peer" />
+                      <Label htmlFor="inspection" className="flex-1 cursor-pointer peer-checked:text-primary">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">Inspection Only</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Agent verifies product authenticity and condition
+                            </p>
+                          </div>
+                          <span className="font-semibold">MWK 2,000</span>
+                        </div>
                       </Label>
-                      <span className="font-semibold text-primary">MWK 7,000</span>
                     </div>
                     <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
-                      <RadioGroupItem value="inspection-payment" id="inspection-payment" />
-                      <Label htmlFor="inspection-payment" className="flex-1 cursor-pointer">
-                        <span className="font-medium text-foreground">Inspection + Payment</span>
-                        <span className="text-muted-foreground text-sm block">
-                          Verify and pay through us (includes delivery quote)
-                        </span>
+                      <RadioGroupItem value="inspection-payment" id="inspection-payment" className="peer" />
+                      <Label htmlFor="inspection-payment" className="flex-1 cursor-pointer peer-checked:text-primary">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">Inspection + Payment</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Agent verifies product and handles secure payment
+                            </p>
+                          </div>
+                          <span className="font-semibold">MWK 3,500</span>
+                        </div>
                       </Label>
-                      <span className="font-semibold text-primary">MWK 10,000</span>
                     </div>
                     <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
-                      <RadioGroupItem value="full-service" id="full-service" />
-                      <Label htmlFor="full-service" className="flex-1 cursor-pointer">
-                        <span className="font-medium text-foreground">Full Service</span>
-                        <span className="text-muted-foreground text-sm block">
-                          Verify, pay, and deliver to you (delivery quoted separately)
-                        </span>
+                      <RadioGroupItem value="full-service" id="full-service" className="peer" />
+                      <Label htmlFor="full-service" className="flex-1 cursor-pointer peer-checked:text-primary">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">Full Service</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Complete verification, payment handling, and delivery coordination
+                            </p>
+                          </div>
+                          <span className="font-semibold">MWK 5,000</span>
+                        </div>
                       </Label>
-                      <span className="font-semibold text-primary">MWK 10,000+</span>
                     </div>
                   </RadioGroup>
+                  {errors.serviceTier && (
+                    <p className="text-sm text-red-600">{errors.serviceTier.message}</p>
+                  )}
                 </div>
 
-                {/* Payment Method (shown for payment services) */}
-                {(serviceTier === "inspection-payment" || serviceTier === "full-service") && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="space-y-2 pt-4 border-t border-border"
-                  >
+                {/* Delivery Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="deliveryNotes">Delivery Notes (Optional)</Label>
+                  <Textarea
+                    id="deliveryNotes"
+                    placeholder="Any special delivery instructions..."
+                    {...register("deliveryNotes")}
+                  />
+                </div>
+
+                {/* Payment Method */}
+                {serviceTier !== "inspection" && (
+                  <div className="space-y-2">
                     <Label htmlFor="paymentMethod">Preferred Payment Method</Label>
-                    <select
+                    <Input
                       id="paymentMethod"
-                      className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g., MTN Mobile Money, Airtel Money, Cash"
                       {...register("paymentMethod")}
-                    >
-                      <option value="">Select payment method</option>
-                      <option value="airtel_money">Airtel Money</option>
-                      <option value="tnm_mpamba">TNM Mpamba</option>
-                      <option value="bank_transfer">Bank Transfer</option>
-                      <option value="cash_delivery">Cash on Delivery</option>
-                    </select>
-                    <div className="space-y-2">
-                      <Label htmlFor="deliveryNotes">Delivery Notes (Optional)</Label>
-                      <Textarea
-                        id="deliveryNotes"
-                        placeholder="Any special delivery instructions..."
-                        {...register("deliveryNotes")}
-                      />
-                    </div>
-                  </motion.div>
+                    />
+                  </div>
                 )}
 
-                {/* Total & Submit */}
-                <div className="pt-6 border-t border-border">
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="text-muted-foreground">Service Fee</span>
-                    <span className="text-2xl font-bold text-foreground">
-                      {serviceFeeLabels[serviceTier]}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    * Service fees are non-refundable. Additional charges may apply for delivery and special requirements.
-                  </p>
-                  <Button type="submit" size="xl" className="w-full group" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        Submit Request
-                        <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </Button>
-                </div>
+                {/* Submit Button */}
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting Request...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Submit Inspection Request
+                    </>
+                  )}
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -394,37 +405,33 @@ export function InspectionRequestForm() {
               Request Submitted Successfully!
             </DialogTitle>
             <DialogDescription>
-              Your inspection request has been received. Save this tracking ID for future reference.
+              Your inspection request has been received. Please save your tracking ID for future reference.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <code className="text-lg font-mono">{trackingId}</code>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={copyToClipboard}
-                className="ml-2"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4 text-green-500" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-              </Button>
+          <div className="flex flex-col items-center space-y-4 py-4">
+            <div className="p-4 bg-muted rounded-lg w-full">
+              <p className="text-sm text-muted-foreground mb-1">Tracking ID</p>
+              <p className="font-mono text-lg font-bold break-all">{trackingId}</p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {user 
-                ? "You can also track this request in your dashboard."
-                : "We'll contact you via WhatsApp shortly with updates."
-              }
+            <p className="text-sm text-muted-foreground text-center">
+              You can use this ID to track the status of your request on our tracking page.
             </p>
-            <Button onClick={() => setShowTrackingModal(false)}>
-              Continue
+            <Button 
+              onClick={() => {
+                navigator.clipboard.writeText(trackingId);
+                toast({
+                  title: "Copied!",
+                  description: "Tracking ID copied to clipboard",
+                });
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              Copy Tracking ID
             </Button>
           </div>
         </DialogContent>
       </Dialog>
     </section>
   );
-}
+};

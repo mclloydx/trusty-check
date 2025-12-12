@@ -102,6 +102,11 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'users' | 'requests'>('users');
   const [requestFilter, setRequestFilter] = useState<'all' | 'pending' | 'active' | 'completed' | 'cancelled'>('all');
 
+  // Show warning if supabase is not available
+  if (!supabase) {
+    console.warn('Supabase client is not available. Admin dashboard features will be disabled.');
+  }
+
   // Filter requests based on selected filter - Moved to correct position to fix hook order
   const filteredRequests = useMemo(() => {
     if (requestFilter === 'all') return requests;
@@ -139,6 +144,13 @@ export default function AdminDashboard() {
   }, [user, role, activeTab]);
 
   const fetchUsers = async () => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping users fetch');
+      setLoadingUsers(false);
+      return;
+    }
+
     setLoadingUsers(true);
     try {
       // Fetch all profiles (admin has access via RLS)
@@ -183,6 +195,12 @@ export default function AdminDashboard() {
   };
 
   const fetchAgents = async () => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping agents fetch');
+      return;
+    }
+
     try {
       // Fetch all agents
       const { data: agentRoles, error: rolesError } = await supabase
@@ -209,8 +227,16 @@ export default function AdminDashboard() {
   };
 
   const fetchRequests = async () => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping requests fetch');
+      setLoadingRequests(false);
+      return;
+    }
+
     setLoadingRequests(true);
     try {
+      // Fetch all requests (admin has access via RLS)
       const { data, error } = await supabase
         .from('inspection_requests')
         .select(`
@@ -225,7 +251,11 @@ export default function AdminDashboard() {
           created_at,
           payment_received,
           payment_method,
-          receipt_number
+          receipt_number,
+          tracking_id,
+          profiles!inspection_requests_assigned_agent_id_fkey (
+            full_name
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -235,7 +265,7 @@ export default function AdminDashboard() {
       console.error('Error fetching requests:', error);
       toast({
         title: "Error",
-        description: "Failed to load inspection requests",
+        description: "Failed to load requests",
         variant: "destructive",
       });
     } finally {
@@ -244,114 +274,114 @@ export default function AdminDashboard() {
   };
 
   const updateUserRole = async (userId: string, newRole: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping role update');
+      toast({
+        title: "Error",
+        description: "Role update is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const { error } = await supabase
+      // First, check if a role record already exists for this user
+      const { data: existingRole, error: fetchError } = await supabase
         .from('user_roles')
-        .update({ role: newRole as 'admin' | 'agent' | 'user' })
-        .eq('user_id', userId);
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      let error;
+      if (existingRole) {
+        // Update existing role
+        const { error: updateError } = await supabase
+          .from('user_roles')
+          .update({ role: newRole })
+          .eq('user_id', userId);
+        error = updateError;
+      } else {
+        // Insert new role
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: newRole });
+        error = insertError;
+      }
 
       if (error) throw error;
 
+      // Update local state
       setUsers(users.map(u => 
         u.id === userId ? { ...u, role: newRole } : u
       ));
 
       toast({
-        title: "Role updated",
-        description: "User role has been updated successfully",
+        title: "Role Updated",
+        description: `User role updated to ${newRole}`,
       });
     } catch (error) {
-      console.error('Error updating role:', error);
+      console.error('Error updating user role:', error);
       toast({
         title: "Error",
-        description: "Failed to update user role",
+        description: "Failed to update user role. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const updateRequestStatus = async (requestId: string, newStatus: string) => {
-    try {
-      // Check if request is already completed
-      const request = requests.find(r => r.id === requestId);
-      if (request?.status === 'completed') {
-        // Only allow admin to change status of completed requests
-        toast({
-          title: "Request Already Completed",
-          description: "This request has already been completed and cannot be updated except by admin.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check if trying to mark as completed without payment
-      if (newStatus === 'completed' && request?.service_tier !== 'inspection' && !request?.payment_received) {
-        toast({
-          title: "Payment Not Verified",
-          description: "Please verify payment before marking request as completed.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('inspection_requests')
-        .update({ status: newStatus as 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled' })
-        .eq('id', requestId);
-
-      if (error) throw error;
-
-      setRequests(requests.map(r => 
-        r.id === requestId ? { ...r, status: newStatus } : r
-      ));
-
-      toast({
-        title: "Status updated",
-        description: "Request status has been updated successfully",
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
+  const deleteUser = async (userId: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping user deletion');
       toast({
         title: "Error",
-        description: "Failed to update request status",
+        description: "User deletion is not available at the moment",
         variant: "destructive",
       });
+      return;
     }
-  };
 
-  // New function to allow admin to revert completed requests
-  const revertCompletedRequest = async (requestId: string, newStatus: string) => {
     try {
+      // Delete user profile (this will cascade delete related records via RLS)
       const { error } = await supabase
-        .from('inspection_requests')
-        .update({ 
-          status: newStatus as 'pending' | 'assigned' | 'in_progress' | 'cancelled',
-          // Reset payment if reverting from completed
-          payment_received: newStatus === 'pending' || newStatus === 'assigned' || newStatus === 'in_progress' || newStatus === 'cancelled' ? false : undefined
-        })
-        .eq('id', requestId);
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
 
       if (error) throw error;
 
-      setRequests(requests.map(r => 
-        r.id === requestId ? { ...r, status: newStatus, payment_received: newStatus === 'pending' || newStatus === 'assigned' || newStatus === 'in_progress' || newStatus === 'cancelled' ? false : r.payment_received } : r
-      ));
+      // Update local state
+      setUsers(users.filter(u => u.id !== userId));
 
       toast({
-        title: "Status reverted",
-        description: "Request status has been reverted successfully",
+        title: "User Deleted",
+        description: "User has been deleted successfully",
       });
     } catch (error) {
-      console.error('Error reverting status:', error);
+      console.error('Error deleting user:', error);
       toast({
         title: "Error",
-        description: "Failed to revert request status",
+        description: "Failed to delete user. Please try again.",
         variant: "destructive",
       });
     }
   };
 
   const assignAgentToRequest = async (requestId: string, agentId: string | null) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping agent assignment');
+      toast({
+        title: "Error",
+        description: "Agent assignment is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('inspection_requests')
@@ -363,33 +393,83 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
+      // Update local state
       setRequests(requests.map(r => 
         r.id === requestId ? { ...r, assigned_agent_id: agentId, status: agentId ? 'assigned' : 'pending' } : r
       ));
 
       toast({
-        title: "Agent assigned",
-        description: agentId 
-          ? "Agent has been assigned to the request" 
-          : "Agent assignment has been removed",
+        title: "Request Reassigned",
+        description: "Request has been reassigned successfully",
       });
     } catch (error) {
-      console.error('Error assigning agent:', error);
+      console.error('Error reassigning request:', error);
       toast({
         title: "Error",
-        description: "Failed to assign agent to request",
+        description: "Failed to reassign request. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const updateRequestPayment = async (requestId: string, isPaid: boolean) => {
+  const updateRequestStatus = async (requestId: string, status: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping status update');
+      toast({
+        title: "Error",
+        description: "Status update is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('inspection_requests')
+        .update({ status })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      // Update local state
+      setRequests(requests.map(r => 
+        r.id === requestId ? { ...r, status } : r
+      ));
+
+      toast({
+        title: "Status Updated",
+        description: `Request status updated to ${statusConfig[status]?.label || status}`,
+      });
+    } catch (error) {
+      console.error('Error updating request status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update request status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const markPaymentReceived = async (requestId: string, receiptNumber: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping payment marking');
+      toast({
+        title: "Error",
+        description: "Payment marking is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('inspection_requests')
         .update({ 
-          payment_received: isPaid,
-          receipt_number: isPaid ? `RCT-${Date.now()}` : null
+          payment_received: true,
+          receipt_number: receiptNumber,
+          receipt_uploaded_at: new Date().toISOString()
         })
         .eq('id', requestId);
 
@@ -399,26 +479,155 @@ export default function AdminDashboard() {
       setRequests(requests.map(r => 
         r.id === requestId ? { 
           ...r, 
-          payment_received: isPaid,
-          receipt_number: isPaid ? `RCT-${Date.now()}` : null
+          payment_received: true,
+          receipt_number: receiptNumber,
+          receipt_uploaded_at: new Date().toISOString()
         } : r
       ));
 
       toast({
-        title: "Payment updated",
-        description: `Request marked as ${isPaid ? 'paid' : 'unpaid'} successfully`,
+        title: "Payment Marked",
+        description: "Payment has been marked as received",
       });
     } catch (error) {
-      console.error('Error updating payment:', error);
+      console.error('Error marking payment:', error);
       toast({
         title: "Error",
-        description: "Failed to update payment status",
+        description: "Failed to mark payment. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const downloadReceipt = (request: InspectionRequest, agent: Agent | null = null) => {
+  const completeRequest = async (requestId: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping request completion');
+      toast({
+        title: "Error",
+        description: "Request completion is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('inspection_requests')
+        .update({ status: 'completed' })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      // Update local state
+      setRequests(requests.map(r => 
+        r.id === requestId ? { ...r, status: 'completed' } : r
+      ));
+
+      toast({
+        title: "Request Completed",
+        description: "Request has been marked as completed",
+      });
+    } catch (error) {
+      console.error('Error completing request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const cancelRequest = async (requestId: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping request cancellation');
+      toast({
+        title: "Error",
+        description: "Request cancellation is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('inspection_requests')
+        .update({ status: 'cancelled' })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      // Update local state
+      setRequests(requests.map(r => 
+        r.id === requestId ? { ...r, status: 'cancelled' } : r
+      ));
+
+      toast({
+        title: "Request Cancelled",
+        description: "Request has been cancelled",
+      });
+    } catch (error) {
+      console.error('Error cancelling request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const revertCompletedRequest = async (requestId: string) => {
+    // Skip if supabase is not available
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping request reversion');
+      toast({
+        title: "Error",
+        description: "Request reversion is not available at the moment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('inspection_requests')
+        .update({ 
+          status: 'pending',
+          payment_received: null,
+          receipt_number: null,
+          receipt_uploaded_at: null
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      // Update local state
+      setRequests(requests.map(r => 
+        r.id === requestId ? { 
+          ...r, 
+          status: 'pending',
+          payment_received: null,
+          receipt_number: null,
+          receipt_uploaded_at: null
+        } : r
+      ));
+
+      toast({
+        title: "Request Reverted",
+        description: "Request has been reverted to pending status",
+      });
+    } catch (error) {
+      console.error('Error reverting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revert request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadReceipt = (request: InspectionRequest) => {
     const doc = new jsPDF();
 
     // Stazama branding
@@ -456,7 +665,7 @@ export default function AdminDashboard() {
     doc.text(`Name: ${request.customer_name}`, 20, yPos);
     yPos += 8;
     doc.text(`Store: ${request.store_name}`, 20, yPos);
-    yPos += 10;
+    yPos += 15;
 
     // Service details
     doc.setFont('helvetica', 'bold');
@@ -477,18 +686,16 @@ export default function AdminDashboard() {
     yPos += 8;
     doc.text(`Payment Method: ${request.payment_method || 'N/A'}`, 20, yPos);
     yPos += 8;
-    doc.text(`Status: ${request.payment_received ? 'PAID' : 'PENDING'}`, 20, yPos);
+    doc.text(`Status: PAID`, 20, yPos);
     yPos += 15;
 
-    // Agent details
-    if (agent) {
+    // Admin details
+    if (profile?.full_name) {
       doc.setFont('helvetica', 'bold');
-      doc.text('PROCESSED BY', 20, yPos);
+      doc.text('ADMINISTRATOR', 20, yPos);
       yPos += 10;
       doc.setFont('helvetica', 'normal');
-      doc.text(`Agent: ${agent.full_name || 'N/A'}`, 20, yPos);
-      yPos += 8;
-      doc.text(`Email: ${agent.email || 'N/A'}`, 20, yPos);
+      doc.text(`Processed by: ${profile.full_name}`, 20, yPos);
       yPos += 15;
     }
 
