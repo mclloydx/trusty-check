@@ -6,3 +6,8 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Environment variables configuration
+[template.environment]
+  VITE_SUPABASE_URL = "Your Supabase URL (e.g., https://your-project-id.supabase.co)"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "Your Supabase Publishable Key (starts with eyJ...)"
