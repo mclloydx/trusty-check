@@ -240,10 +240,7 @@ export default function AgentDashboard() {
           payment_received,
           payment_method,
           receipt_number,
-          tracking_id,
-          profiles!inspection_requests_assigned_agent_id_fkey (
-            full_name
-          )
+          tracking_id
         `)
         .order('created_at', { ascending: false });
 
@@ -350,7 +347,7 @@ export default function AgentDashboard() {
     try {
       const { error } = await supabase
         .from('inspection_requests')
-        .update({ status })
+        .update({ status: status as any }) // Cast to any to bypass type checking
         .eq('id', requestId);
 
       if (error) throw error;
@@ -939,7 +936,7 @@ export default function AgentDashboard() {
                                       <Button 
                                         size="sm" 
                                         variant="outline" 
-                                        onClick={() => updateRequestPayment(request.id, true)}
+                                        onClick={() => markPaymentReceived(request.id, `RCT-${Date.now()}`)}
                                         className="text-xs h-6"
                                       >
                                         Mark Paid
