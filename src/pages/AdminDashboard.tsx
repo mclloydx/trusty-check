@@ -796,145 +796,158 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {loading && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <img src="/images/Dark.svg" alt="Stazama Logo" className="w-6 h-6" />
+              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <img src="/images/Dark.svg" alt="Stazama Logo" className="w-5 h-5" />
               </div>
-              <span className="font-bold text-xl">Admin Panel</span>
+              <span className="font-bold text-lg">Admin Panel</span>
             </Link>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <span className="text-xs sm:text-sm text-muted-foreground max-w-[120px] sm:max-w-none truncate hidden xs:inline">
               {profile?.full_name || profile?.email || user?.email}
             </span>
-            <Badge variant="default" className="bg-primary">Admin</Badge>
-            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+            <Badge variant="default" className="bg-primary text-xs py-0.5 px-2">Admin</Badge>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="w-8 h-8">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6">
+      <main className="container mx-auto px-4 py-6">
+        {/* Tabs - Made responsive */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           <Button 
             variant={activeTab === 'users' ? 'default' : 'outline'} 
             onClick={() => setActiveTab('users')}
-            className="gap-2"
+            className="gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm"
+            size="sm"
           >
-            <Users className="w-4 h-4" />
-            User Management
+            <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span>User Mgmt</span>
           </Button>
           <Button 
             variant={activeTab === 'requests' ? 'default' : 'outline'} 
             onClick={() => setActiveTab('requests')}
-            className="gap-2"
+            className="gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm"
+            size="sm"
           >
-            <Package className="w-4 h-4" />
-            Inspection Requests
+            <Package className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span>Requests</span>
           </Button>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Made responsive */}
         {activeTab === 'users' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <Card className="col-span-1">
               <CardHeader className="pb-2">
-                <CardDescription>Total Users</CardDescription>
-                <CardTitle className="text-2xl">{stats.totalUsers}</CardTitle>
+                <CardDescription className="text-xs">Total Users</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">{stats.totalUsers}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Users className="w-6 h-6 text-muted-foreground" />
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
               </CardContent>
             </Card>
             <Card className="col-span-1">
               <CardHeader className="pb-2">
-                <CardDescription>Admins</CardDescription>
-                <CardTitle className="text-2xl">{stats.admins}</CardTitle>
+                <CardDescription className="text-xs">Admins</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">{stats.admins}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Shield className="w-6 h-6 text-primary" />
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </CardContent>
             </Card>
             <Card className="col-span-1">
               <CardHeader className="pb-2">
-                <CardDescription>Agents</CardDescription>
-                <CardTitle className="text-2xl">{stats.agents}</CardTitle>
+                <CardDescription className="text-xs">Agents</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">{stats.agents}</CardTitle>
               </CardHeader>
               <CardContent>
-                <UserCog className="w-6 h-6 text-blue-500" />
+                <UserCog className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
               </CardContent>
             </Card>
             <Card className="col-span-1">
               <CardHeader className="pb-2">
-                <CardDescription>Regular Users</CardDescription>
-                <CardTitle className="text-2xl">{stats.regularUsers}</CardTitle>
+                <CardDescription className="text-xs">Regular Users</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">{stats.regularUsers}</CardTitle>
               </CardHeader>
               <CardContent>
-                <UserPlus className="w-6 h-6 text-green-500" />
+                <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
               </CardContent>
             </Card>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <Card className="col-span-1">
               <CardHeader className="pb-2">
-                <CardDescription>Total Requests</CardDescription>
-                <CardTitle className="text-2xl">{stats.totalRequests}</CardTitle>
+                <CardDescription className="text-xs">Total Requests</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">{stats.totalRequests}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Package className="w-6 h-6 text-purple-500" />
+                <Package className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
               </CardContent>
             </Card>
             <Card className="col-span-1">
               <CardHeader className="pb-2">
-                <CardDescription>Active Requests</CardDescription>
-                <CardTitle className="text-2xl">{stats.activeRequests}</CardTitle>
+                <CardDescription className="text-xs">Active Requests</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">{stats.activeRequests}</CardTitle>
               </CardHeader>
               <CardContent>
-                <ClipboardList className="w-6 h-6 text-orange-500" />
+                <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
               </CardContent>
             </Card>
             <Card className="col-span-1">
               <CardHeader className="pb-2">
-                <CardDescription>Completed</CardDescription>
-                <CardTitle className="text-2xl">{stats.completedRequests}</CardTitle>
+                <CardDescription className="text-xs">Completed</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">{stats.completedRequests}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CheckCircle className="w-6 h-6 text-purple-500" />
+                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
               </CardContent>
             </Card>
             <Card className="col-span-1">
               <CardHeader className="pb-2">
-                <CardDescription>Cancelled</CardDescription>
-                <CardTitle className="text-2xl">{stats.cancelledRequests}</CardTitle>
+                <CardDescription className="text-xs">Cancelled</CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">{stats.cancelledRequests}</CardTitle>
               </CardHeader>
               <CardContent>
-                <XCircle className="w-6 h-6 text-gray-500" />
+                <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Request Filters */}
+        {/* Request Filters - Made responsive */}
         {activeTab === 'requests' && (
-          <div className="flex gap-2 mb-6 flex-wrap">
+          <div className="flex gap-1 mb-6 flex-wrap overflow-x-auto pb-2">
             <Button 
               variant={requestFilter === 'all' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('all')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
-              All Requests
+              All
             </Button>
             <Button 
               variant={requestFilter === 'pending' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('pending')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
               Unassigned
             </Button>
@@ -942,6 +955,7 @@ export default function AdminDashboard() {
               variant={requestFilter === 'active' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('active')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
               Active
             </Button>
@@ -949,6 +963,7 @@ export default function AdminDashboard() {
               variant={requestFilter === 'completed' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('completed')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
               Completed
             </Button>
@@ -956,6 +971,7 @@ export default function AdminDashboard() {
               variant={requestFilter === 'cancelled' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('cancelled')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
               Cancelled
             </Button>
@@ -967,7 +983,7 @@ export default function AdminDashboard() {
           /* Users Table */
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <Users className="w-5 h-5" />
                 User Management
               </CardTitle>
@@ -981,70 +997,92 @@ export default function AdminDashboard() {
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((u) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium">
-                          {u.full_name || 'N/A'}
-                        </TableCell>
-                        <TableCell>{u.email || 'N/A'}</TableCell>
-                        <TableCell>{u.phone || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Select
-                            value={u.role}
-                            onValueChange={(value) => updateUserRole(u.id, value)}
-                            disabled={u.id === user?.id}
-                          >
-                            <SelectTrigger className="w-28">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="user">User</SelectItem>
-                              <SelectItem value="agent">Agent</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          {u.created_at 
-                            ? new Date(u.created_at).toLocaleDateString() 
-                            : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          {u.id !== user?.id && (
-                            <Button variant="ghost" size="icon" className="text-destructive">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Name</TableHead>
+                        <TableHead className="text-xs">Email</TableHead>
+                        <TableHead className="text-xs hidden md:table-cell">Phone</TableHead>
+                        <TableHead className="text-xs">Role</TableHead>
+                        <TableHead className="text-xs hidden sm:table-cell">Joined</TableHead>
+                        <TableHead className="text-xs">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-medium max-w-[100px] truncate text-xs">
+                            {u.full_name || 'N/A'}
+                          </TableCell>
+                          <TableCell className="max-w-[120px] truncate text-xs">
+                            {u.email || 'N/A'}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell text-xs">
+                            {u.phone || 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            <Select 
+                              value={u.role} 
+                              onValueChange={(value) => updateUserRole(u.id, value)}
+                            >
+                              <SelectTrigger className="w-[90px] h-7 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="agent">Agent</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell text-xs">
+                            {u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="w-7 h-7">
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this user? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => deleteUser(u.id)}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
         ) : (
-          /* Inspection Requests Table */
+          /* Requests Table */
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <Package className="w-5 h-5" />
-                Inspection Requests Management
+                All Inspection Requests
               </CardTitle>
               <CardDescription>
-                Manage all inspection requests, assign agents, and update statuses
+                Manage all inspection requests across the platform
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1062,165 +1100,125 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead className="hidden sm:table-cell">Store</TableHead>
-                        <TableHead>Service</TableHead>
-                        <TableHead className="hidden sm:table-cell">Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Agent</TableHead>
-                        <TableHead className="hidden md:table-cell">Date</TableHead>
-                        <TableHead className="hidden md:table-cell">Receipt & Payment</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="text-xs">Customer</TableHead>
+                        <TableHead className="text-xs">Store</TableHead>
+                        <TableHead className="text-xs">Service</TableHead>
+                        <TableHead className="text-xs">Amount</TableHead>
+                        <TableHead className="text-xs">Status</TableHead>
+                        <TableHead className="text-xs hidden md:table-cell">Assigned To</TableHead>
+                        <TableHead className="text-xs hidden sm:table-cell">Date</TableHead>
+                        <TableHead className="text-xs hidden md:table-cell">Receipt & Payment</TableHead>
+                        <TableHead className="text-xs">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredRequests.map((request) => {
                         const status = statusConfig[request.status] || statusConfig.pending;
                         const StatusIcon = status.icon;
-                        const assignedAgent = agents.find(a => a.id === request.assigned_agent_id);
                         
                         return (
                           <TableRow key={request.id}>
-                            <TableCell className="font-medium">
-                              <div className="truncate max-w-[120px]">{request.customer_name}</div>
+                            <TableCell className="font-medium max-w-[100px] truncate text-xs">
+                              <div className="truncate">{request.customer_name}</div>
+                              <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1 md:hidden">
+                                <Phone className="w-2.5 h-2.5" />
+                                <span className="truncate">{request.whatsapp}</span>
+                              </div>
                             </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              <div className="truncate max-w-[100px]">{request.store_name}</div>
+                            <TableCell className="max-w-[100px] truncate text-xs">
+                              <div className="truncate">{request.store_name}</div>
+                              <div className="text-[10px] text-muted-foreground truncate md:hidden">{request.store_location}</div>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
                                 {serviceTierLabels[request.service_tier] || request.service_tier}
                               </Badge>
                             </TableCell>
-                            <TableCell className="hidden sm:table-cell">MWK {request.service_fee.toLocaleString()}</TableCell>
+                            <TableCell className="text-xs">MWK {request.service_fee.toLocaleString()}</TableCell>
                             <TableCell>
-                              <Badge variant={status.variant} className="gap-1 text-xs">
-                                <StatusIcon className="w-3 h-3" />
-                                <span className="hidden sm:inline">{status.label}</span>
+                              <Badge variant={status.variant} className="gap-1 text-[10px] px-1.5 py-0.5">
+                                <StatusIcon className="w-2.5 h-2.5" />
+                                <span className="hidden xs:inline">{status.label}</span>
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              <Select
-                                value={request.assigned_agent_id || undefined}
-                                onValueChange={(value) => assignAgentToRequest(request.id, value === '__unassign__' ? null : value)}
-                              >
-                                <SelectTrigger className="w-24 text-xs">
-                                  <SelectValue placeholder="Agent" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="__unassign__">Unassign</SelectItem>
-                                  {agents.map(agent => (
-                                    <SelectItem key={agent.id} value={agent.id}>
-                                      {agent.full_name || agent.email}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                            <TableCell className="hidden md:table-cell text-xs max-w-[100px] truncate">
+                              {request.assigned_agent_id ? (
+                                <div className="flex items-center gap-1">
+                                  <User className="w-3 h-3" />
+                                  <span className="truncate">
+                                    {agents.find(a => a.id === request.assigned_agent_id)?.full_name || 'Agent'}
+                                  </span>
+                                </div>
+                              ) : (
+                                'Unassigned'
+                              )}
                             </TableCell>
-                            <TableCell className="hidden md:table-cell text-xs">
+                            <TableCell className="hidden sm:table-cell text-xs">
                               {new Date(request.created_at).toLocaleDateString()}
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
-                              <div className="flex flex-col gap-2">
-                                {request.payment_received ? (
-                                  <div className="flex flex-col gap-2">
-                                    <Badge variant="default" className="gap-1 text-xs">
-                                      <CheckCircle className="w-3 h-3" />
-                                      Paid
-                                    </Badge>
-                                    {request.receipt_number && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => downloadReceipt(request)} // Remove the second parameter
-                                        className="text-xs h-6"
-                                      >
-                                        Download
-                                      </Button>
-                                    )}
-                                  </div>
+                              <div className="flex flex-col gap-1">
+                                {request.payment_method && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                                    {request.payment_method}
+                                  </Badge>
+                                )}
+                                {request.receipt_number ? (
+                                  <Badge variant="default" className="text-[10px] px-1.5 py-0.5">
+                                    Paid
+                                  </Badge>
                                 ) : (
-                                  <div className="flex flex-col gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <Button 
-                                        size="sm" 
-                                        variant="outline" 
-                                        onClick={() => markPaymentReceived(request.id, `RCT-${Date.now()}`)} // Use markPaymentReceived instead
-                                        className="text-xs h-6"
-                                      >
-                                        Mark Paid
-                                      </Button>
-                                    </div>
-                                    {request.payment_method && (
-                                      <div className="text-xs text-muted-foreground truncate max-w-[80px]">
-                                        Method: {request.payment_method}
-                                      </div>
-                                    )}
-                                    {request.receipt_number && (
-                                      <div className="text-xs text-muted-foreground truncate max-w-[80px]">
-                                        Receipt: {request.receipt_number}
-                                      </div>
-                                    )}
-                                  </div>
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                                    Pending
+                                  </Badge>
                                 )}
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-1">
-                                {request.status === 'completed' ? (
-                                  <div className="flex flex-col gap-1">
-                                    <div className="text-muted-foreground text-[10px] hidden sm:block">
-                                      Completed - Actions Restricted
-                                    </div>
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="text-[10px] h-6 px-2">
-                                          Revert
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Revert Completed Request</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            This will change the status of a completed request. This action should only be performed in exceptional circumstances.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <div className="py-4">
-                                          <Select onValueChange={(value) => revertCompletedRequest(request.id)}> // Remove the second parameter
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select new status" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="pending">Pending</SelectItem>
-                                              <SelectItem value="assigned">Assigned</SelectItem>
-                                              <SelectItem value="in_progress">In Progress</SelectItem>
-                                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  </div>
-                                ) : (
-                                  <Select
-                                    value={request.status}
-                                    onValueChange={(value) => updateRequestStatus(request.id, value)}
-                                  >
-                                    <SelectTrigger className="w-24 text-xs">
-                                      <SelectValue>Update</SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="pending">Pending</SelectItem>
-                                      <SelectItem value="assigned">Assigned</SelectItem>
-                                      <SelectItem value="in_progress">In Progress</SelectItem>
-                                      <SelectItem value="completed">Completed</SelectItem>
-                                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                {request.status !== 'completed' && (
+                                  <>
+                                    {request.status === 'pending' && (
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline" 
+                                        onClick={() => assignAgentToRequest(request.id, user?.id || null)}
+                                        className="h-7 text-xs px-2"
+                                      >
+                                        Take
+                                      </Button>
+                                    )}
+                                    {request.status !== 'pending' && request.status !== 'cancelled' && (
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline" 
+                                        onClick={() => completeRequest(request.id)}
+                                        className="h-7 text-xs px-2"
+                                      >
+                                        Complete
+                                      </Button>
+                                    )}
+                                  </>
                                 )}
+                                {request.status === 'completed' && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => revertCompletedRequest(request.id)}
+                                    className="h-7 text-xs px-2"
+                                  >
+                                    Revert
+                                  </Button>
+                                )}
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => cancelRequest(request.id)}
+                                  disabled={request.status === 'cancelled'}
+                                  className="h-7 text-xs px-2 text-destructive"
+                                >
+                                  Cancel
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>

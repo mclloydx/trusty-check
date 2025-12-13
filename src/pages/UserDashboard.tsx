@@ -351,31 +351,31 @@ export default function UserDashboard() {
               <User className="w-3 h-3 mr-1" />
               {profile?.full_name || user.email}
             </Badge>
-            <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+            <Button variant="outline" onClick={handleSignOut} size="sm" className="text-xs sm:text-sm">
+              <LogOut className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">My Dashboard</h1>
-          <p className="text-muted-foreground">Manage your profile and inspection requests</p>
+      <main className="container mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">My Dashboard</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Manage your profile and inspection requests</p>
         </div>
 
         {/* Profile Section */}
-        <div className="mb-12">
+        <div className="mb-8">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   <User className="w-5 h-5" />
                   My Profile
                 </span>
                 {!isEditing && (
-                  <Button variant="outline" onClick={() => setIsEditing(true)}>
+                  <Button variant="outline" onClick={() => setIsEditing(true)} size="sm">
                     <EditIcon className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
@@ -386,7 +386,7 @@ export default function UserDashboard() {
             <CardContent>
               {isEditing ? (
                 <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="fullName">Full Name</Label>
                       <Input
@@ -412,8 +412,8 @@ export default function UserDashboard() {
                       onChange={(e) => setFormData({...formData, address: e.target.value})}
                     />
                   </div>
-                  <div className="flex gap-2">
-                    <Button onClick={handleSave} disabled={isSaving}>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
                       {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                       Save
                     </Button>
@@ -426,29 +426,29 @@ export default function UserDashboard() {
                           address: profile.address || '',
                         });
                       }
-                    }}>
+                    }} className="w-full sm:w-auto">
                       Cancel
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-muted-foreground" />
-                      <span>{profile?.full_name || 'Not set'}</span>
+                      <span className="text-sm">{profile?.full_name || 'Not set'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span>{profile?.phone || 'Not set'}</span>
+                      <span className="text-sm">{profile?.phone || 'Not set'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-muted-foreground" />
-                      <span>{user.email}</span>
+                      <span className="text-sm">{user.email}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <span>{profile?.address || 'Not set'}</span>
+                      <span className="text-sm">{profile?.address || 'Not set'}</span>
                     </div>
                   </div>
                 </div>
@@ -461,7 +461,7 @@ export default function UserDashboard() {
         <div>
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <Package className="w-5 h-5" />
                 My Inspection Requests
               </CardTitle>
@@ -477,8 +477,8 @@ export default function UserDashboard() {
                 <div className="text-center py-8">
                   <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium mb-2">No requests yet</h3>
-                  <p className="text-muted-foreground mb-4">You haven't submitted any inspection requests.</p>
-                  <Button onClick={() => navigate('/request-inspection')}>
+                  <p className="text-muted-foreground mb-4 text-sm">You haven't submitted any inspection requests.</p>
+                  <Button onClick={() => navigate('/request-inspection')} size="sm">
                     Submit Request
                   </Button>
                 </div>
@@ -489,16 +489,16 @@ export default function UserDashboard() {
                       <CardContent className="p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold">{request.store_name}</h3>
-                              <Badge variant={statusConfig[request.status]?.variant || "outline"}>
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-base">{request.store_name}</h3>
+                              <Badge variant={statusConfig[request.status]?.variant || "outline"} className="text-xs">
                                 {statusConfig[request.status]?.label || request.status}
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                               {request.product_details}
                             </p>
-                            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                               <span>Service: {serviceTierLabels[request.service_tier] || request.service_tier}</span>
                               <span>Fee: MWK {request.service_fee.toLocaleString()}</span>
                               <span>{new Date(request.created_at).toLocaleDateString()}</span>
@@ -507,16 +507,16 @@ export default function UserDashboard() {
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-col sm:items-end gap-2">
+                          <div className="flex flex-row sm:flex-col gap-2 sm:items-end">
                             {request.status === 'completed' && request.receipt_number && (
                               <Button 
                                 size="sm" 
                                 variant="outline" 
                                 onClick={() => downloadReceipt(request)}
-                                className="flex items-center gap-1"
+                                className="flex items-center gap-1 text-xs"
                               >
                                 <Download className="w-3 h-3" />
-                                Receipt
+                                <span className="hidden xs:inline">Receipt</span>
                               </Button>
                             )}
                             <Button 
@@ -524,8 +524,10 @@ export default function UserDashboard() {
                               variant="outline" 
                               onClick={() => navigate(`/track?trackingId=${request.tracking_id}`)}
                               disabled={!request.tracking_id}
+                              className="text-xs"
                             >
-                              Track
+                              <span className="hidden xs:inline">Track</span>
+                              <span className="xs:hidden">T</span>
                             </Button>
                           </div>
                         </div>

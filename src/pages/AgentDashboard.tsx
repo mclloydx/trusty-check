@@ -678,131 +678,144 @@ export default function AgentDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {loading && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                <img src="/images/Dark.svg" alt="Stazama Logo" className="w-6 h-6" />
+              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <img src="/images/Dark.svg" alt="Stazama Logo" className="w-5 h-5" />
               </div>
-              <span className="font-bold text-xl">Agent Dashboard</span>
+              <span className="font-bold text-lg">Agent Portal</span>
             </Link>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <span className="text-xs sm:text-sm text-muted-foreground max-w-[120px] sm:max-w-none truncate hidden xs:inline">
               {profile?.full_name || profile?.email || user?.email}
             </span>
-            <Badge variant="secondary" className="bg-blue-500/10 text-blue-500">Agent</Badge>
-            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+            <Badge variant="default" className="bg-blue-500 text-xs py-0.5 px-2">Agent</Badge>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="w-8 h-8">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+      <main className="container mx-auto px-4 py-6">
+        {/* Stats Cards - Made responsive */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
           <Card className="col-span-1">
             <CardHeader className="pb-2">
-              <CardDescription>Total Requests</CardDescription>
-              <CardTitle className="text-2xl">{stats.totalRequests}</CardTitle>
+              <CardDescription className="text-xs">Total Requests</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl">{stats.totalRequests}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Package className="w-6 h-6 text-blue-500" />
+              <Package className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
             </CardContent>
           </Card>
           <Card className="col-span-1">
             <CardHeader className="pb-2">
-              <CardDescription>Total Clients</CardDescription>
-              <CardTitle className="text-2xl">{stats.totalClients}</CardTitle>
+              <CardDescription className="text-xs">Total Clients</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl">{stats.totalClients}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Users className="w-6 h-6 text-blue-500" />
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
             </CardContent>
           </Card>
           <Card className="col-span-1">
             <CardHeader className="pb-2">
-              <CardDescription>Active Tasks</CardDescription>
-              <CardTitle className="text-2xl">{stats.activeRequests}</CardTitle>
+              <CardDescription className="text-xs">Active Tasks</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl">{stats.activeRequests}</CardTitle>
             </CardHeader>
             <CardContent>
-              <ClipboardList className="w-6 h-6 text-orange-500" />
+              <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
             </CardContent>
           </Card>
           <Card className="col-span-1">
             <CardHeader className="pb-2">
-              <CardDescription>Appointments Today</CardDescription>
-              <CardTitle className="text-2xl">{stats.appointmentsToday}</CardTitle>
+              <CardDescription className="text-xs">Appointments Today</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl">{stats.appointmentsToday}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Calendar className="w-6 h-6 text-green-500" />
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
             </CardContent>
           </Card>
           <Card className="col-span-1">
             <CardHeader className="pb-2">
-              <CardDescription>Completed</CardDescription>
-              <CardTitle className="text-2xl">{stats.completedRequests}</CardTitle>
+              <CardDescription className="text-xs">Completed</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl">{stats.completedRequests}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CheckCircle className="w-6 h-6 text-purple-500" />
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
             </CardContent>
           </Card>
           <Card className="col-span-1">
             <CardHeader className="pb-2">
-              <CardDescription>Unassigned</CardDescription>
-              <CardTitle className="text-2xl">{stats.unassignedRequests}</CardTitle>
+              <CardDescription className="text-xs">Unassigned</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl">{stats.unassignedRequests}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Bell className="w-6 h-6 text-red-500" />
+              <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
             </CardContent>
           </Card>
           <Card className="col-span-1">
             <CardHeader className="pb-2">
-              <CardDescription>Cancelled</CardDescription>
-              <CardTitle className="text-2xl">{stats.cancelledRequests}</CardTitle>
+              <CardDescription className="text-xs">Cancelled</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl">{stats.cancelledRequests}</CardTitle>
             </CardHeader>
             <CardContent>
-              <XCircle className="w-6 h-6 text-gray-500" />
+              <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
             </CardContent>
           </Card>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6">
+        {/* Tabs - Made responsive */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           <Button 
             variant={activeTab === 'requests' ? 'default' : 'outline'} 
             onClick={() => setActiveTab('requests')}
-            className="gap-2"
+            className="gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm"
+            size="sm"
           >
-            <Package className="w-4 h-4" />
-            Requests
+            <Package className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span>Requests</span>
           </Button>
           <Button 
             variant={activeTab === 'clients' ? 'default' : 'outline'} 
             onClick={() => setActiveTab('clients')}
-            className="gap-2"
+            className="gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm"
+            size="sm"
           >
-            <Users className="w-4 h-4" />
-            Client List
+            <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span>Clients</span>
           </Button>
         </div>
 
-        {/* Request Filters */}
+        {/* Request Filters - Made responsive */}
         {activeTab === 'requests' && (
-          <div className="flex gap-2 mb-6 flex-wrap">
+          <div className="flex gap-1 mb-6 flex-wrap overflow-x-auto pb-2">
             <Button 
               variant={requestFilter === 'all' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('all')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
-              All Requests
+              All
             </Button>
             <Button 
               variant={requestFilter === 'pending' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('pending')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
               Unassigned
             </Button>
@@ -810,6 +823,7 @@ export default function AgentDashboard() {
               variant={requestFilter === 'active' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('active')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
               Active
             </Button>
@@ -817,6 +831,7 @@ export default function AgentDashboard() {
               variant={requestFilter === 'completed' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('completed')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
               Completed
             </Button>
@@ -824,6 +839,7 @@ export default function AgentDashboard() {
               variant={requestFilter === 'cancelled' ? 'default' : 'outline'} 
               onClick={() => setRequestFilter('cancelled')}
               size="sm"
+              className="text-xs h-7 px-2"
             >
               Cancelled
             </Button>
@@ -835,7 +851,7 @@ export default function AgentDashboard() {
           /* Inspection Requests Table */
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <Package className="w-5 h-5" />
                 All Inspection Requests
               </CardTitle>
@@ -858,15 +874,15 @@ export default function AgentDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Store</TableHead>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="hidden md:table-cell">Assigned To</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="hidden md:table-cell">Receipt & Payment</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="text-xs">Customer</TableHead>
+                        <TableHead className="text-xs">Store</TableHead>
+                        <TableHead className="text-xs">Service</TableHead>
+                        <TableHead className="text-xs">Amount</TableHead>
+                        <TableHead className="text-xs">Status</TableHead>
+                        <TableHead className="text-xs hidden md:table-cell">Assigned To</TableHead>
+                        <TableHead className="text-xs hidden sm:table-cell">Date</TableHead>
+                        <TableHead className="text-xs hidden md:table-cell">Receipt & Payment</TableHead>
+                        <TableHead className="text-xs">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -876,143 +892,107 @@ export default function AgentDashboard() {
                         
                         return (
                           <TableRow key={request.id}>
-                            <TableCell className="font-medium">
-                              <div className="truncate max-w-[120px]">{request.customer_name}</div>
-                              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                <Phone className="w-3 h-3" />
-                                <span className="truncate max-w-[100px]">{request.whatsapp}</span>
+                            <TableCell className="font-medium max-w-[100px] truncate text-xs">
+                              <div className="truncate">{request.customer_name}</div>
+                              <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1 md:hidden">
+                                <Phone className="w-2.5 h-2.5" />
+                                <span className="truncate">{request.whatsapp}</span>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="truncate max-w-[100px]">{request.store_name}</div>
-                              <div className="text-xs text-muted-foreground truncate max-w-[100px]">{request.store_location}</div>
+                            <TableCell className="max-w-[100px] truncate text-xs">
+                              <div className="truncate">{request.store_name}</div>
+                              <div className="text-[10px] text-muted-foreground truncate md:hidden">{request.store_location}</div>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
                                 {serviceTierLabels[request.service_tier] || request.service_tier}
                               </Badge>
                             </TableCell>
-                            <TableCell>MWK {request.service_fee.toLocaleString()}</TableCell>
+                            <TableCell className="text-xs">MWK {request.service_fee.toLocaleString()}</TableCell>
                             <TableCell>
-                              <Badge variant={status.variant} className="gap-1 text-xs">
-                                <StatusIcon className="w-3 h-3" />
-                                <span className="hidden sm:inline">{status.label}</span>
+                              <Badge variant={status.variant} className="gap-1 text-[10px] px-1.5 py-0.5">
+                                <StatusIcon className="w-2.5 h-2.5" />
+                                <span className="hidden xs:inline">{status.label}</span>
                               </Badge>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-xs truncate max-w-[80px]">
-                                  {getAgentName(request.assigned_agent_id)}
-                                </span>
-                              </div>
+                            <TableCell className="hidden md:table-cell text-xs max-w-[100px] truncate">
+                              {request.assigned_agent_id ? (
+                                <div className="flex items-center gap-1">
+                                  <User className="w-3 h-3" />
+                                  <span className="truncate">
+                                    {request.assigned_agent_id === user?.id ? 'Me' : 
+                                     agents.find(a => a.id === request.assigned_agent_id)?.full_name || 'Agent'}
+                                  </span>
+                                </div>
+                              ) : (
+                                'Unassigned'
+                              )}
                             </TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="hidden sm:table-cell text-xs">
                               {new Date(request.created_at).toLocaleDateString()}
                             </TableCell>
-                            {/* Receipt & Payment Verification */}
                             <TableCell className="hidden md:table-cell">
-                              <div className="flex flex-col gap-2">
-                                {request.payment_received ? (
-                                  <div className="flex flex-col gap-2">
-                                    <Badge variant="default" className="gap-1 text-xs">
-                                      <CheckCircle className="w-3 h-3" />
-                                      Paid
-                                    </Badge>
-                                    {request.receipt_number && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => downloadReceipt(request)}
-                                        className="text-xs h-6"
-                                      >
-                                        Download
-                                      </Button>
-                                    )}
-                                  </div>
+                              <div className="flex flex-col gap-1">
+                                {request.payment_method && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                                    {request.payment_method}
+                                  </Badge>
+                                )}
+                                {request.receipt_number ? (
+                                  <Badge variant="default" className="text-[10px] px-1.5 py-0.5">
+                                    Paid
+                                  </Badge>
                                 ) : (
-                                  <div className="flex flex-col gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <Button 
-                                        size="sm" 
-                                        variant="outline" 
-                                        onClick={() => markPaymentReceived(request.id, `RCT-${Date.now()}`)}
-                                        className="text-xs h-6"
-                                      >
-                                        Mark Paid
-                                      </Button>
-                                    </div>
-                                    {request.payment_method && (
-                                      <div className="text-xs text-muted-foreground truncate max-w-[80px]">
-                                        Method: {request.payment_method}
-                                      </div>
-                                    )}
-                                    {request.receipt_number && (
-                                      <div className="text-xs text-muted-foreground truncate max-w-[80px]">
-                                        Receipt: {request.receipt_number}
-                                      </div>
-                                    )}
-                                  </div>
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                                    Pending
+                                  </Badge>
                                 )}
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-1">
-                                {request.status === 'completed' ? (
-                                  <div className="text-muted-foreground text-[10px] hidden sm:block">
-                                    Completed - Actions Disabled
-                                  </div>
-                                ) : request.assigned_agent_id === user?.id ? (
-                                  <Select
-                                    value={request.status}
-                                    onValueChange={(value) => updateRequestStatus(request.id, value)}
+                                {request.status === 'pending' && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => assignAgentToRequest(request.id, user?.id || null)}
+                                    className="h-7 text-xs px-2"
                                   >
-                                    <SelectTrigger className="w-24 text-xs">
-                                      <SelectValue>Update</SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="assigned">Assigned</SelectItem>
-                                      <SelectItem value="in_progress">In Progress</SelectItem>
-                                      <SelectItem value="completed">Completed</SelectItem>
-                                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                ) : !request.assigned_agent_id ? (
-                                  <Button variant="outline" onClick={() => assignSelfToRequest(request.id)} className="text-[10px] h-6 px-2">
-                                    <UserPlus className="w-3 h-3 mr-1" />
-                                    Assign
+                                    Assign to Me
                                   </Button>
-                                ) : (
-                                  <div className="flex flex-col gap-1">
-                                    <div className="text-[10px] text-muted-foreground hidden sm:block">
-                                      Assigned to {getAgentName(request.assigned_agent_id)}
-                                    </div>
-                                    {/* Admins and the assigned agent can reassign */}
-                                    {(role === 'admin' || request.assigned_agent_id === user?.id) && (
-                                      <Select
-                                        value={request.assigned_agent_id || undefined}
-                                        onValueChange={(value) => {
-                                          if (value === '__unassign__') {
-                                            assignAgentToRequest(request.id, null);
-                                          } else {
-                                            assignAgentToRequest(request.id, value);
-                                          }
-                                        }}
+                                )}
+                                {(request.status === 'assigned' || request.status === 'in_progress') && request.assigned_agent_id === user?.id && (
+                                  <>
+                                    {!request.payment_received && (
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline" 
+                                        onClick={() => markPaymentReceived(request.id)}
+                                        className="h-7 text-xs px-2"
                                       >
-                                        <SelectTrigger className="w-24 text-xs">
-                                          <SelectValue>Reassign</SelectValue>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="__unassign__">Unassign</SelectItem>
-                                          {agents.map(agent => (
-                                            <SelectItem key={agent.id} value={agent.id}>
-                                              {agent.full_name || agent.email}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                        Mark Paid
+                                      </Button>
                                     )}
-                                  </div>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      onClick={() => completeRequest(request.id)}
+                                      className="h-7 text-xs px-2"
+                                      disabled={!request.payment_received}
+                                    >
+                                      Complete
+                                    </Button>
+                                  </>
+                                )}
+                                {request.status !== 'cancelled' && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    onClick={() => cancelRequest(request.id)}
+                                    className="h-7 text-xs px-2 text-destructive"
+                                  >
+                                    Cancel
+                                  </Button>
                                 )}
                               </div>
                             </TableCell>
@@ -1029,12 +1009,12 @@ export default function AgentDashboard() {
           /* Clients Table */
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <Users className="w-5 h-5" />
                 Client List
               </CardTitle>
               <CardDescription>
-                View and manage your assigned clients
+                View all clients you're working with
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1045,53 +1025,43 @@ export default function AgentDashboard() {
               ) : clients.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No clients assigned yet</p>
+                  <p>No clients found</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Address</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clients.map((client) => (
-                      <TableRow key={client.id}>
-                        <TableCell className="font-medium">
-                          {client.full_name || 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4 text-muted-foreground" />
-                            {client.email || 'N/A'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-muted-foreground" />
-                            {client.phone || 'N/A'}
-                          </div>
-                        </TableCell>
-                        <TableCell>{client.address || 'N/A'}</TableCell>
-                        <TableCell>
-                          {client.created_at 
-                            ? new Date(client.created_at).toLocaleDateString() 
-                            : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            View Details
-                          </Button>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Name</TableHead>
+                        <TableHead className="text-xs">Email</TableHead>
+                        <TableHead className="text-xs hidden md:table-cell">Phone</TableHead>
+                        <TableHead className="text-xs hidden sm:table-cell">Address</TableHead>
+                        <TableHead className="text-xs hidden sm:table-cell">Joined</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {clients.map((client) => (
+                        <TableRow key={client.id}>
+                          <TableCell className="font-medium max-w-[100px] truncate text-xs">
+                            {client.full_name || 'N/A'}
+                          </TableCell>
+                          <TableCell className="max-w-[120px] truncate text-xs">
+                            {client.email || 'N/A'}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell text-xs">
+                            {client.phone || 'N/A'}
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell max-w-[120px] truncate text-xs">
+                            {client.address || 'N/A'}
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell text-xs">
+                            {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
