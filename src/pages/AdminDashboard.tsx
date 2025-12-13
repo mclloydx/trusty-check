@@ -24,7 +24,9 @@ import {
   AlertCircle,
   Bell,
   ClipboardList,
-  Shield
+  Shield,
+  Phone,
+  User
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -59,6 +61,7 @@ interface InspectionRequest {
   id: string;
   customer_name: string;
   store_name: string;
+  store_location: string;
   product_details: string;
   service_tier: string;
   service_fee: number;
@@ -68,6 +71,7 @@ interface InspectionRequest {
   payment_received: boolean | null;
   payment_method: string | null;
   receipt_number: string | null;
+  whatsapp: string;
 }
 
 interface Agent {
@@ -243,6 +247,7 @@ export default function AdminDashboard() {
           id,
           customer_name,
           store_name,
+          store_location,
           product_details,
           service_tier,
           service_fee,
@@ -252,6 +257,7 @@ export default function AdminDashboard() {
           payment_received,
           payment_method,
           receipt_number,
+          whatsapp,
           tracking_id
         `)
         .order('created_at', { ascending: false });
