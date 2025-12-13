@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -13,30 +13,39 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [hasShownToast, setHasShownToast] = useState(false);
 
   useEffect(() => {
     if (!loading) {
       if (!user) {
         // User is not authenticated
-        toast({
-          title: "Access Denied",
-          description: "Please log in to access this page.",
-          variant: "destructive",
-        });
+        if (!hasShownToast) {
+          toast({
+            title: "Access Denied",
+            description: "Please log in to access this page.",
+            variant: "destructive",
+          });
+          setHasShownToast(true);
+        }
         navigate('/', { replace: true });
-      } else if (requiredRole && role !== requiredRole && role !== 'admin') {
+      } else if (requiredRole && role && role !== requiredRole && role !== 'admin') {
         // User doesn't have the required role (except admins who can access everything)
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to access this page.",
-          variant: "destructive",
-        });
+        if (!hasShownToast) {
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to access this page.",
+            variant: "destructive",
+          });
+          setHasShownToast(true);
+        }
         navigate('/', { replace: true });
       }
     }
-  }, [user, role, loading, navigate, requiredRole, toast]);
+  }, [user, role, loading, navigate, requiredRole, toast, hasShownToast]);
 
-  if (loading) {
+  // Show loading state while checking authentication
+  // Also show loading if user exists but role is not yet loaded (needed for refresh scenarios)
+  if (loading || (user && requiredRole && !role)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -48,10 +57,12 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   // If user is authenticated and has the required role (or is admin), render children
-  if (user && (!requiredRole || role === requiredRole || role === 'admin')) {
+  // Also render children if no required role is specified but user is authenticated
+  if (user && (!requiredRole || (role && (role === requiredRole || role === 'admin')))) {
     return <>{children}</>;
   }
 
-  // Otherwise, return null while redirecting
+  // Handle the case where we're not loading but user is not authenticated
+  // This will trigger the useEffect to redirect
   return null;
 };
