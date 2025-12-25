@@ -8,6 +8,7 @@ import { Suspense, lazy } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
+
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -15,9 +16,6 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AgentDashboard = lazy(() => import("./pages/AgentDashboard"));
 const UserDashboard = lazy(() => import("./pages/UserDashboard"));
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
-const HowItWorks = lazy(() => import("./pages/HowItWorks"));
-const Services = lazy(() => import("./pages/Services"));
-const RequestInspection = lazy(() => import("./pages/RequestInspection"));
 const BecomeAgent = lazy(() => import("./pages/BecomeAgent"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -50,7 +48,7 @@ const App = () => (
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
             <Suspense fallback={<div>Loading...</div>}>
-              <Routes>
+            <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -58,9 +56,7 @@ const App = () => (
                 <Route path="/agent" element={<ProtectedRoute requiredRole="agent"><AgentDashboard /></ProtectedRoute>} />
                 <Route path="/user" element={<ProtectedRoute requiredRole="user"><UserDashboard /></ProtectedRoute>} />
                 <Route path="/track" element={<TrackOrder />} />
-                <Route path="/how-it-works" element={<HowItWorks />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/request-inspection" element={<RequestInspection />} />
+
                 <Route path="/become-agent" element={<BecomeAgent />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />

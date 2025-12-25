@@ -8,7 +8,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import {
   User,
   LogOut,
@@ -25,9 +41,13 @@ import {
   AlertCircle,
   Bell,
   Download,
-  Edit as EditIcon
+  Edit as EditIcon,
+  RefreshCw,
+  FileText,
+  Mail as MailIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { downloadReceipt, emailReceipt, requestReceiptReissue } from '@/services/receiptService';
 
 // Show warning if supabase is not available
 if (!supabase) {
@@ -50,6 +70,8 @@ interface InspectionRequest {
   customer_address: string | null;
   store_location: string;
   tracking_id: string | null;
+  receipt_verification_code: string | null;
+  receipt_issued_at: string | null;
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -79,6 +101,8 @@ export default function UserDashboard() {
     phone: '',
     address: '',
   });
+  const [selectedRequest, setSelectedRequest] = useState<InspectionRequest | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -107,7 +131,7 @@ export default function UserDashboard() {
     try {
       const { data, error } = await supabase
         .from('inspection_requests')
-        .select('id, store_name, product_details, service_tier, service_fee, status, created_at, payment_received, payment_method, receipt_number, customer_name, whatsapp, customer_address, store_location, tracking_id')
+        .select('id, store_name, product_details, service_tier, service_fee, status, created_at, payment_received, payment_method, receipt_number, customer_name, whatsapp, customer_address, store_location, tracking_id, receipt_verification_code, receipt_issued_at')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
@@ -164,90 +188,103 @@ export default function UserDashboard() {
     }
   };
 
-  const downloadReceipt = (request: InspectionRequest) => {
-    const doc = new jsPDF();
+  const handleDownloadReceipt = async (request: InspectionRequest, format: 'pdf' | 'json' = 'pdf') => {
+    try {
+      if (!request.receipt_number) {
+        toast({
+          title: "Error",
+          description: "No receipt available for this request",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Stazama branding
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('STAZAMA', 105, 20, { align: 'center' });
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Professional Inspection Services', 105, 30, { align: 'center' });
-    doc.text('Quality Assurance & Trust Verification', 105, 35, { align: 'center' });
-
-    // Receipt header
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PAYMENT RECEIPT', 105, 50, { align: 'center' });
-
-    // Receipt details
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    let yPos = 70;
-
-    doc.text(`Receipt Number: ${request.receipt_number}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Time: ${new Date().toLocaleTimeString()}`, 20, yPos);
-    yPos += 20;
-
-    // Customer details
-    doc.setFont('helvetica', 'bold');
-    doc.text('CUSTOMER DETAILS', 20, yPos);
-    yPos += 10;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Name: ${request.customer_name}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Phone: ${request.whatsapp}`, 20, yPos);
-    yPos += 8;
-    if (request.customer_address) {
-      doc.text(`Address: ${request.customer_address}`, 20, yPos);
-      yPos += 8;
+      const result = await downloadReceipt(request, format);
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Receipt downloaded successfully. Verification code: ${result.verificationCode}`,
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download receipt",
+        variant: "destructive",
+      });
     }
-    yPos += 10;
+  };
 
-    // Service details
-    doc.setFont('helvetica', 'bold');
-    doc.text('SERVICE DETAILS', 20, yPos);
-    yPos += 10;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Store: ${request.store_name}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Location: ${request.store_location}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Service: ${serviceTierLabels[request.service_tier] || request.service_tier}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Product: ${request.product_details}`, 20, yPos, { maxWidth: 170 });
-    yPos += 15;
+  const handleEmailReceipt = async (request: InspectionRequest) => {
+    try {
+      if (!request.receipt_number) {
+        toast({
+          title: "Error",
+          description: "No receipt available for this request",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Payment details
-    doc.setFont('helvetica', 'bold');
-    doc.text('PAYMENT DETAILS', 20, yPos);
-    yPos += 10;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Amount: MWK ${request.service_fee.toLocaleString()}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Payment Method: ${request.payment_method || 'N/A'}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Status: ${request.payment_received ? 'PAID' : 'PENDING'}`, 20, yPos);
-    yPos += 15;
+      if (!user?.email) {
+        toast({
+          title: "Error",
+          description: "No email address available for your account",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Agent details (not shown for users for privacy)
+      const result = await emailReceipt(request, user.email);
+      
+      toast({
+        title: "Info",
+        description: result.message,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error emailing receipt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send receipt via email",
+        variant: "destructive",
+      });
+    }
+  };
 
-    // Footer
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'italic');
-    doc.text('Thank you for choosing Stazama for your inspection needs.', 105, yPos, { align: 'center' });
-    yPos += 5;
-    doc.text('This receipt serves as proof of payment and service completion.', 105, yPos, { align: 'center' });
-    yPos += 5;
-    doc.text('For any inquiries, please contact us at support@stazama.com', 105, yPos, { align: 'center' });
+  const handleReissueReceipt = async (request: InspectionRequest) => {
+    try {
+      if (!request.id) {
+        toast({
+          title: "Error",
+          description: "Invalid request ID",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Save the PDF
-    doc.save(`stazama-receipt-${request.receipt_number}.pdf`);
+      const result = await requestReceiptReissue(request.id);
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Receipt reissued with new verification code: ${result.newVerificationCode}`,
+          variant: "default",
+        });
+        // Refresh the request to get the new verification code
+        fetchRequests();
+      }
+    } catch (error) {
+      console.error('Error reissuing receipt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reissue receipt",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSignOut = async () => {
@@ -485,7 +522,14 @@ export default function UserDashboard() {
               ) : (
                 <div className="space-y-4">
                   {requests.map((request) => (
-                    <Card key={request.id} className="hover:shadow-md transition-shadow">
+                    <Card
+                      key={request.id}
+                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setIsModalOpen(true);
+                      }}
+                    >
                       <CardContent className="p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex-1">
@@ -495,34 +539,82 @@ export default function UserDashboard() {
                                 {statusConfig[request.status]?.label || request.status}
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                              {request.product_details}
-                            </p>
                             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                              <span>Service: {serviceTierLabels[request.service_tier] || request.service_tier}</span>
-                              <span>Fee: MWK {request.service_fee.toLocaleString()}</span>
+                              <span>ID: {request.tracking_id || request.id.substring(0, 8)}</span>
                               <span>{new Date(request.created_at).toLocaleDateString()}</span>
-                              {request.tracking_id && (
-                                <span className="font-mono">ID: {request.tracking_id}</span>
-                              )}
+                              <span>MWK {request.service_fee.toLocaleString()}</span>
                             </div>
                           </div>
                           <div className="flex flex-row sm:flex-col gap-2 sm:items-end">
                             {request.status === 'completed' && request.receipt_number && (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => downloadReceipt(request)}
-                                className="flex items-center gap-1 text-xs"
-                              >
-                                <Download className="w-3 h-3" />
-                                <span className="hidden xs:inline">Receipt</span>
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="sm" variant="outline" className="flex items-center gap-1 text-xs">
+                                    <Download className="w-3 h-3" />
+                                    <span className="hidden xs:inline">Receipt</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-48">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDownloadReceipt(request, 'pdf');
+                                    }}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    Download PDF
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDownloadReceipt(request, 'json');
+                                    }}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    Download JSON
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEmailReceipt(request);
+                                    }}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <MailIcon className="w-4 h-4" />
+                                    Email Receipt
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReissueReceipt(request);
+                                    }}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <RefreshCw className="w-4 h-4" />
+                                    Reissue Receipt
+                                  </DropdownMenuItem>
+                                  {request.receipt_verification_code && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <div className="px-2 py-1 text-xs text-muted-foreground">
+                                        Verification Code: {request.receipt_verification_code}
+                                      </div>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             )}
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => navigate(`/track?trackingId=${request.tracking_id}`)}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/track?trackingId=${request.tracking_id}`);
+                              }}
                               disabled={!request.tracking_id}
                               className="text-xs"
                             >
@@ -540,6 +632,203 @@ export default function UserDashboard() {
           </Card>
         </div>
       </main>
+      
+      {/* Request Details Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Request Details
+            </DialogTitle>
+            <DialogDescription>
+              Detailed information about your inspection request
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRequest && (
+            <div className="space-y-6 py-4">
+              {/* Customer Information Section */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Customer Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Name:</span>
+                      <span>{selectedRequest.customer_name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Phone:</span>
+                      <span>{selectedRequest.whatsapp}</span>
+                    </div>
+                    {selectedRequest.customer_address && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Address:</span>
+                        <span>{selectedRequest.customer_address}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email:</span>
+                      <span>{user?.email || 'Not available'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Request ID:</span>
+                      <span className="font-mono">{selectedRequest.tracking_id || selectedRequest.id}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Service Information Section */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Home className="w-4 h-4" />
+                  Service Information
+                </h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Store Name:</span>
+                    <span>{selectedRequest.store_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Store Location:</span>
+                    <span>{selectedRequest.store_location}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Service Tier:</span>
+                    <span>{serviceTierLabels[selectedRequest.service_tier] || selectedRequest.service_tier}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Service Fee:</span>
+                    <span>MWK {selectedRequest.service_fee.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Details Section */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Product Details
+                </h3>
+                <div className="text-sm">
+                  <p className="whitespace-pre-wrap">{selectedRequest.product_details}</p>
+                </div>
+              </div>
+
+              {/* Status and Dates Section */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Status & Timeline
+                </h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Status:</span>
+                    <Badge variant={statusConfig[selectedRequest.status]?.variant || "outline"}>
+                      {statusConfig[selectedRequest.status]?.label || selectedRequest.status}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Created At:</span>
+                    <span>{new Date(selectedRequest.created_at).toLocaleString()}</span>
+                  </div>
+                  {selectedRequest.receipt_issued_at && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Receipt Issued:</span>
+                      <span>{new Date(selectedRequest.receipt_issued_at).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Information Section */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Payment Information
+                </h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Payment Status:</span>
+                    <span>{selectedRequest.payment_received ? 'Paid' : 'Pending'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Payment Method:</span>
+                    <span>{selectedRequest.payment_method || 'Not specified'}</span>
+                  </div>
+                  {selectedRequest.receipt_number && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Receipt Number:</span>
+                      <span>{selectedRequest.receipt_number}</span>
+                    </div>
+                  )}
+                  {selectedRequest.receipt_verification_code && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Verification Code:</span>
+                      <span className="font-mono font-semibold">{selectedRequest.receipt_verification_code}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+                {selectedRequest.status === 'completed' && selectedRequest.receipt_number && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Receipt
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-48">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handleDownloadReceipt(selectedRequest, 'pdf');
+                          setIsModalOpen(false);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Download PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handleDownloadReceipt(selectedRequest, 'json');
+                          setIsModalOpen(false);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Download JSON
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    navigate(`/track?trackingId=${selectedRequest.tracking_id}`);
+                    setIsModalOpen(false);
+                  }}
+                  disabled={!selectedRequest.tracking_id}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Track Request
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

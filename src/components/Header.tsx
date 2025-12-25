@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
-  { label: "How It Works", href: "/how-it-works" },
-  { label: "Services", href: "/services" },
+  { label: "How It Works", href: "/#how-it-works" },
+  { label: "Services", href: "/#services" },
   { label: "Request Inspection", href: "/request-inspection" },
   { label: "Track Order", href: "/track" },
 ];

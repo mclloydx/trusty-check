@@ -4,33 +4,28 @@ import { Search, ShieldCheck, CreditCard, Truck, MessageCircle, CheckCircle } fr
 const steps = [
   {
     icon: Search,
-    title: "Submit Request",
-    description: "Tell us what you want to buy and where the seller is located",
-  },
-  {
-    icon: MessageCircle,
-    title: "Agent Assignment",
-    description: "We connect you with a verified local agent near the seller",
+    title: "Request a Service",
+    description: "Submit your inspection request with asset details and location",
   },
   {
     icon: ShieldCheck,
-    title: "Inspection",
-    description: "Agent inspects the product and sends you detailed photos & report",
-  },
-  {
-    icon: CreditCard,
-    title: "Payment Facilitation",
-    description: "Optionally, agent handles payment to seller on your behalf",
-  },
-  {
-    icon: Truck,
-    title: "Delivery",
-    description: "Choose full service and we ship the item directly to you",
+    title: "Stazama Conducts Inspection",
+    description: "Our agent inspects and verifies the asset on-site",
   },
   {
     icon: CheckCircle,
-    title: "Confirmation",
-    description: "Receive your verified product with complete peace of mind",
+    title: "Receive Proof",
+    description: "Get photos, videos, and detailed inspection reports",
+  },
+  {
+    icon: CreditCard,
+    title: "Choose Payment & Document Options",
+    description: "Select secure payment and document handling preferences",
+  },
+  {
+    icon: CheckCircle,
+    title: "Conditions Met → Release",
+    description: "Payment and documents released once conditions are satisfied",
   },
 ];
 
@@ -48,7 +43,7 @@ export function HowItWorks() {
             How Stazama Works
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Simple, secure, and transparent process to verify your purchases
+            Simple, transparent process to inspect, verify, and protect your transactions.
           </p>
         </motion.div>
 

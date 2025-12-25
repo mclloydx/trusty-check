@@ -26,12 +26,6 @@ if (!supabase) {
   console.warn('Supabase client is not available. Request submission will be disabled.');
 }
 
-const serviceFees = {
-  inspection: 2000,
-  "inspection-payment": 3500,
-  "full-service": 5000,
-};
-
 const formSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters"),
   whatsapp: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
@@ -39,20 +33,18 @@ const formSchema = z.object({
   storeName: z.string().min(2, "Store name must be at least 2 characters"),
   storeLocation: z.string().min(5, "Location must be at least 5 characters"),
   productDetails: z.string().min(10, "Product details must be at least 10 characters"),
-  serviceTier: z.enum(["inspection", "inspection-payment", "full-service"], {
-    required_error: "Please select a service tier",
+  assetType: z.enum(["goods", "vehicle", "property", "documents"], {
+    required_error: "Please select what you want inspected",
   }),
   deliveryNotes: z.string().optional(),
-  paymentMethod: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 const generateTrackingId = () => {
-  const prefix = "STZ";
-  const timestamp = Date.now().toString().slice(-10);
-  const randomChars = Math.random().toString(36).substring(2, 7).toUpperCase();
-  return `${prefix}-${timestamp}-${randomChars}`;
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const randomStr = Math.random().toString(36).substring(2, 11).toUpperCase();
+  return `STZ-${timestamp}-${randomStr}`;
 };
 
 export const InspectionRequestForm = () => {
@@ -61,7 +53,7 @@ export const InspectionRequestForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [trackingId, setTrackingId] = useState("");
-  const [serviceTier, setServiceTier] = useState<"inspection" | "inspection-payment" | "full-service">("inspection");
+  const [assetType, setAssetType] = useState<"goods" | "vehicle" | "property" | "documents">("goods");
 
   const {
     register,
@@ -72,7 +64,7 @@ export const InspectionRequestForm = () => {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      serviceTier: "inspection",
+      assetType: "goods",
     },
   });
 
@@ -100,10 +92,9 @@ export const InspectionRequestForm = () => {
         store_name: data.storeName,
         store_location: data.storeLocation,
         product_details: data.productDetails,
-        service_tier: data.serviceTier,
-        service_fee: serviceFees[data.serviceTier],
+        service_tier: data.assetType,
+        service_fee: null, // No fee for landing page form
         delivery_notes: data.deliveryNotes || null,
-        payment_method: data.paymentMethod || null,
         tracking_id: trackingId,
         user_id: user?.id || null,
       };
@@ -113,7 +104,8 @@ export const InspectionRequestForm = () => {
       // Add a timeout to prevent hanging
       const insertPromise = supabase
         .from('inspection_requests')
-        .insert(insertData);
+        .insert(insertData)
+        .select();
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Insert operation timed out')), 10000)
       );
@@ -135,6 +127,8 @@ export const InspectionRequestForm = () => {
       // Set tracking ID and show modal
       setTrackingId(trackingId);
       setShowTrackingModal(true);
+      
+
       
       // Reset form
       reset();
@@ -291,62 +285,64 @@ export const InspectionRequestForm = () => {
                   </div>
                 </div>
 
-                {/* Service Selection */}
+                {/* Asset Type Selection */}
                 <div className="space-y-4 pt-4 border-t border-border">
-                  <h3 className="font-semibold text-foreground">Select Service</h3>
+                  <h3 className="font-semibold text-foreground">What do you want inspected?</h3>
                   <RadioGroup
-                    value={serviceTier}
+                    value={assetType}
                     onValueChange={(value) => {
-                      setValue("serviceTier", value as any);
-                      setServiceTier(value as any);
+                      setValue("assetType", value as any);
+                      setAssetType(value as any);
                     }}
                     className="space-y-3"
                   >
                     <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
-                      <RadioGroupItem value="inspection" id="inspection" className="peer" />
-                      <Label htmlFor="inspection" className="flex-1 cursor-pointer peer-checked:text-primary">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">Inspection Only</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              Agent verifies product authenticity and condition
-                            </p>
-                          </div>
-                          <span className="font-semibold">MWK 2,000</span>
+                      <RadioGroupItem value="goods" id="goods" className="peer" />
+                      <Label htmlFor="goods" className="flex-1 cursor-pointer peer-checked:text-primary">
+                        <div>
+                          <p className="font-medium">Goods & Items</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Electronics, furniture, machinery, or any valuable items
+                          </p>
                         </div>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
-                      <RadioGroupItem value="inspection-payment" id="inspection-payment" className="peer" />
-                      <Label htmlFor="inspection-payment" className="flex-1 cursor-pointer peer-checked:text-primary">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">Inspection + Payment</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              Agent verifies product and handles secure payment
-                            </p>
-                          </div>
-                          <span className="font-semibold">MWK 3,500</span>
+                      <RadioGroupItem value="vehicle" id="vehicle" className="peer" />
+                      <Label htmlFor="vehicle" className="flex-1 cursor-pointer peer-checked:text-primary">
+                        <div>
+                          <p className="font-medium">Vehicles & Machinery</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Cars, trucks, motorcycles, or industrial equipment
+                          </p>
                         </div>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
-                      <RadioGroupItem value="full-service" id="full-service" className="peer" />
-                      <Label htmlFor="full-service" className="flex-1 cursor-pointer peer-checked:text-primary">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">Full Service</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              Complete verification, payment handling, and delivery coordination
-                            </p>
-                          </div>
-                          <span className="font-semibold">MWK 5,000</span>
+                      <RadioGroupItem value="property" id="property" className="peer" />
+                      <Label htmlFor="property" className="flex-1 cursor-pointer peer-checked:text-primary">
+                        <div>
+                          <p className="font-medium">Land & Property</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Real estate, buildings, or land parcels
+                          </p>
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors cursor-pointer">
+                      <RadioGroupItem value="documents" id="documents" className="peer" />
+                      <Label htmlFor="documents" className="flex-1 cursor-pointer peer-checked:text-primary">
+                        <div>
+                          <p className="font-medium">Documents & Ownership Papers</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Certificates, contracts, or legal documents
+                          </p>
                         </div>
                       </Label>
                     </div>
                   </RadioGroup>
-                  {errors.serviceTier && (
-                    <p className="text-sm text-red-600">{errors.serviceTier.message}</p>
+                  {errors.assetType && (
+                    <p className="text-sm text-red-600">{errors.assetType.message}</p>
                   )}
                 </div>
 
@@ -360,17 +356,7 @@ export const InspectionRequestForm = () => {
                   />
                 </div>
 
-                {/* Payment Method */}
-                {serviceTier !== "inspection" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMethod">Preferred Payment Method</Label>
-                    <Input
-                      id="paymentMethod"
-                      placeholder="e.g., MTN Mobile Money, Airtel Money, Cash"
-                      {...register("paymentMethod")}
-                    />
-                  </div>
-                )}
+
 
                 {/* Submit Button */}
                 <Button 

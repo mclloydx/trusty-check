@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { TrackingDisplay } from '@/components/TrackingDisplay';
 
 // Show warning if supabase is not available
 if (!supabase) {
@@ -48,13 +49,36 @@ const serviceTierLabels: Record<string, string> = {
   inspection: "Inspection Only",
   "inspection-payment": "Inspection + Payment",
   "full-service": "Full Service",
+  goods: "Goods & Items",
+  vehicle: "Vehicles & Machinery",
+  property: "Land & Property",
+  documents: "Documents & Ownership Papers",
 };
+
+interface RequestData {
+  id: string;
+  customer_name: string;
+  store_name: string;
+  store_location: string;
+  product_details: string;
+  service_tier: string;
+  service_fee: number | null;
+  status: string;
+  assigned_agent_id: string | null;
+  created_at: string;
+  payment_received: boolean | null;
+  payment_method: string | null;
+  receipt_number: string | null;
+  whatsapp: string;
+  customer_address: string | null;
+  tracking_id: string;
+}
 
 export default function TrackOrder() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [request, setRequest] = useState<any>(null);
+  const [request, setRequest] = useState<RequestData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   const {
@@ -90,9 +114,11 @@ export default function TrackOrder() {
 
     setIsLoading(true);
     try {
-      // Cast to any to bypass type checking for custom RPC functions
-      const { data: requestData, error } = await (supabase as any)
-        .rpc('track_order_by_id', { tracking_id_param: data.trackingId.toUpperCase() });
+      const { data: requestData, error } = await supabase
+        .from('inspection_requests')
+        .select('id, customer_name, store_name, store_location, product_details, service_tier, service_fee, status, assigned_agent_id, created_at, payment_received, payment_method, receipt_number, whatsapp, customer_address, tracking_id')
+        .eq('tracking_id', data.trackingId.toUpperCase())
+        .single();
 
       if (error || !requestData || (Array.isArray(requestData) && requestData.length === 0)) {
         toast({
@@ -132,17 +158,19 @@ export default function TrackOrder() {
     }
 
     try {
-      // Cast to any to bypass type checking for custom RPC functions
-      const { data: result, error } = await (supabase as any)
-        .rpc('update_tracked_order', {
-          tracking_id_param: request.tracking_id,
-          customer_name_param: data.customerName,
-          whatsapp_param: data.whatsapp,
-          customer_address_param: data.customerAddress || null,
-          store_name_param: data.storeName,
-          store_location_param: data.storeLocation,
-          product_details_param: data.productDetails,
-        });
+      const { data: result, error } = await supabase
+        .from('inspection_requests')
+        .update({
+          customer_name: data.customerName,
+          whatsapp: data.whatsapp,
+          customer_address: data.customerAddress || null,
+          store_name: data.storeName,
+          store_location: data.storeLocation,
+          product_details: data.productDetails,
+        })
+        .eq('tracking_id', request.tracking_id)
+        .select()
+        .single();
 
       if (error || !result) throw error;
 
@@ -187,9 +215,12 @@ export default function TrackOrder() {
     }
 
     try {
-      // Cast to any to bypass type checking for custom RPC functions
-      const { data: result, error } = await (supabase as any)
-        .rpc('cancel_tracked_order', { tracking_id_param: request.tracking_id });
+      const { data: result, error } = await supabase
+        .from('inspection_requests')
+        .update({ status: 'cancelled' })
+        .eq('tracking_id', request.tracking_id)
+        .select()
+        .single();
 
       if (error || !result) throw error;
 
@@ -237,6 +268,9 @@ export default function TrackOrder() {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-2xl">
+        {/* Tracking Display - show when we have a request */}
+        {request && <TrackingDisplay trackingId={request.tracking_id} />}
+        
         {!request ? (
           /* Tracking Form */
           <motion.div

@@ -24,9 +24,21 @@ import {
   UserPlus,
   Bell,
   User,
-  Trash2
+  Trash2,
+  Download,
+  FileText,
+  Mail as MailIcon,
+  RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { downloadReceipt, emailReceipt, requestReceiptReissue } from '@/services/receiptService';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -61,6 +73,11 @@ interface InspectionRequest {
   payment_received: boolean | null;
   payment_method: string | null;
   receipt_number: string | null;
+  tracking_id: string | null;
+  receipt_verification_code?: string | null;
+  receipt_issued_at?: string | null;
+  receipt_data?: any;
+  receipt_uploaded_at?: string | null;
 }
 
 interface Agent {
@@ -240,7 +257,11 @@ export default function AgentDashboard() {
           payment_received,
           payment_method,
           receipt_number,
-          tracking_id
+          tracking_id,
+          receipt_verification_code,
+          receipt_issued_at,
+          receipt_data,
+          receipt_uploaded_at
         `)
         .order('created_at', { ascending: false });
 
@@ -371,7 +392,7 @@ export default function AgentDashboard() {
     }
   };
 
-  const markPaymentReceived = async (requestId: string, receiptNumber: string) => {
+  const markPaymentReceived = async (requestId: string) => {
     // Skip if supabase is not available
     if (!supabase) {
       console.warn('Supabase client not available, skipping payment marking');
@@ -384,36 +405,40 @@ export default function AgentDashboard() {
     }
 
     try {
-      const { error } = await supabase
-        .from('inspection_requests')
-        .update({ 
-          payment_received: true,
-          receipt_number: receiptNumber,
-          receipt_uploaded_at: new Date().toISOString()
-        })
-        .eq('id', requestId);
+      // Call the database function to generate receipt data
+      const { data, error } = await supabase
+        .rpc('generate_receipt_data', { request_id: requestId });
 
       if (error) throw error;
 
-      // Update local state
+      if (!data) {
+        throw new Error('Failed to generate receipt data');
+      }
+
+      const receiptInfo = data;
+
+      // Update local state with the receipt information
       setRequests(requests.map(r => 
         r.id === requestId ? { 
           ...r, 
           payment_received: true,
-          receipt_number: receiptNumber,
-          receipt_uploaded_at: new Date().toISOString()
+          receipt_number: receiptInfo?.receipt_number,
+          // Add new receipt fields if they exist
+          receipt_verification_code: receiptInfo?.verification_code,
+          receipt_issued_at: receiptInfo?.receipt_generated_at,
+          receipt_data: receiptInfo
         } : r
       ));
 
       toast({
         title: "Payment Marked",
-        description: "Payment has been marked as received",
+        description: `Payment has been marked as received. Receipt: ${receiptInfo?.receipt_number}`,
       });
     } catch (error) {
-      console.error('Error marking payment:', error);
+      console.error('Error marking payment and generating receipt:', error);
       toast({
         title: "Error",
-        description: "Failed to mark payment. Please try again.",
+        description: "Failed to mark payment and generate receipt. Please try again.",
         variant: "destructive",
       });
     }
@@ -497,98 +522,97 @@ export default function AgentDashboard() {
     }
   };
 
-  const downloadReceipt = (request: InspectionRequest) => {
-    const doc = new jsPDF();
+  const handleDownloadReceipt = async (request: InspectionRequest, format: 'pdf' | 'json' = 'pdf') => {
+    try {
+      if (!request.receipt_number) {
+        toast({
+          title: "Error",
+          description: "No receipt available for this request",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Stazama branding
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('STAZAMA', 105, 20, { align: 'center' });
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Professional Inspection Services', 105, 30, { align: 'center' });
-    doc.text('Quality Assurance & Trust Verification', 105, 35, { align: 'center' });
-
-    // Receipt header
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PAYMENT RECEIPT', 105, 50, { align: 'center' });
-
-    // Receipt details
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    let yPos = 70;
-
-    doc.text(`Receipt Number: ${request.receipt_number}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Time: ${new Date().toLocaleTimeString()}`, 20, yPos);
-    yPos += 20;
-
-    // Customer details
-    doc.setFont('helvetica', 'bold');
-    doc.text('CUSTOMER DETAILS', 20, yPos);
-    yPos += 10;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Name: ${request.customer_name}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Phone: ${request.whatsapp}`, 20, yPos);
-    yPos += 8;
-    if (request.customer_address) {
-      doc.text(`Address: ${request.customer_address}`, 20, yPos);
-      yPos += 8;
+      const result = await downloadReceipt(request, format);
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Receipt downloaded successfully. Verification code: ${result.verificationCode}`,
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download receipt",
+        variant: "destructive",
+      });
     }
-    yPos += 10;
+  };
 
-    // Service details
-    doc.setFont('helvetica', 'bold');
-    doc.text('SERVICE DETAILS', 20, yPos);
-    yPos += 10;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Store: ${request.store_name}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Location: ${request.store_location}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Service: ${serviceTierLabels[request.service_tier] || request.service_tier}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Product: ${request.product_details}`, 20, yPos, { maxWidth: 170 });
-    yPos += 15;
+  const handleEmailReceipt = async (request: InspectionRequest) => {
+    try {
+      if (!request.receipt_number) {
+        toast({
+          title: "Error",
+          description: "No receipt available for this request",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Payment details
-    doc.setFont('helvetica', 'bold');
-    doc.text('PAYMENT DETAILS', 20, yPos);
-    yPos += 10;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Amount: MWK ${request.service_fee.toLocaleString()}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Payment Method: ${request.payment_method || 'N/A'}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Status: PAID`, 20, yPos);
-    yPos += 15;
-
-    // Agent details
-    if (profile?.full_name) {
-      doc.setFont('helvetica', 'bold');
-      doc.text('AGENT DETAILS', 20, yPos);
-      yPos += 10;
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Handled by: ${profile.full_name}`, 20, yPos);
-      yPos += 15;
+      // For agents, we need to get the user's email from the request
+      // Since we don't have direct access to user emails in this context,
+      // we'll use a placeholder and show a message
+      const result = await emailReceipt(request, 'client@example.com');
+      
+      toast({
+        title: "Info",
+        description: "Email receipt functionality would be implemented here",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error emailing receipt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send receipt via email",
+        variant: "destructive",
+      });
     }
+  };
 
-    // Footer
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'italic');
-    doc.text('Thank you for choosing Stazama for your inspection needs.', 105, yPos, { align: 'center' });
-    yPos += 5;
-    doc.text('This receipt serves as proof of payment and service completion.', 105, yPos, { align: 'center' });
-    yPos += 5;
-    doc.text('For any inquiries, please contact us at support@stazama.com', 105, yPos, { align: 'center' });
+  const handleReissueReceipt = async (request: InspectionRequest) => {
+    try {
+      if (!request.id) {
+        toast({
+          title: "Error",
+          description: "Invalid request ID",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Save the PDF
-    doc.save(`stazama-receipt-${request.receipt_number}.pdf`);
+      const result = await requestReceiptReissue(request.id);
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Receipt reissued with new verification code: ${result.newVerificationCode}`,
+          variant: "default",
+        });
+        // Refresh the request to get the new verification code
+        fetchRequests();
+      }
+    } catch (error) {
+      console.error('Error reissuing receipt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reissue receipt",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSignOut = async () => {
@@ -939,9 +963,66 @@ export default function AgentDashboard() {
                                   </Badge>
                                 )}
                                 {request.receipt_number ? (
-                                  <Badge variant="default" className="text-[10px] px-1.5 py-0.5">
-                                    Paid
-                                  </Badge>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button size="sm" variant="outline" className="h-6 text-[10px] px-1.5 py-0.5">
+                                        <Download className="w-2.5 h-2.5 mr-1" />
+                                        Paid
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-48">
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDownloadReceipt(request, 'pdf');
+                                        }}
+                                        className="flex items-center gap-2 text-xs"
+                                      >
+                                        <FileText className="w-3 h-3" />
+                                        Download PDF
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDownloadReceipt(request, 'json');
+                                        }}
+                                        className="flex items-center gap-2 text-xs"
+                                      >
+                                        <FileText className="w-3 h-3" />
+                                        Download JSON
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEmailReceipt(request);
+                                        }}
+                                        className="flex items-center gap-2 text-xs"
+                                      >
+                                        <MailIcon className="w-3 h-3" />
+                                        Email Receipt
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleReissueReceipt(request);
+                                        }}
+                                        className="flex items-center gap-2 text-xs"
+                                      >
+                                        <RefreshCw className="w-3 h-3" />
+                                        Reissue Receipt
+                                      </DropdownMenuItem>
+                                      {request.receipt_verification_code && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          <div className="px-2 py-1 text-xs text-muted-foreground">
+                                            Code: {request.receipt_verification_code}
+                                          </div>
+                                        </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 ) : (
                                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
                                     Pending

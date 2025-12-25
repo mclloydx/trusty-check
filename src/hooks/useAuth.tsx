@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { roleService } from '@/integrations/supabase/roleService';
 
 // Check if supabase client is available
 if (!supabase) {
@@ -46,22 +47,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data: profileData } = await supabase
+      // Get user data from profiles table
+      const { data: userData } = await supabase
         .from('profiles')
-        .select('*')
+        .select('full_name, phone, address, avatar_url')
         .eq('id', userId)
         .maybeSingle();
-      
-      if (profileData) {
-        setProfile(profileData);
+        
+      if (userData) {
+        setProfile({
+          id: userId,
+          email: user?.email || '', // Get email from auth user object
+          full_name: userData.full_name || '',
+          phone: userData.phone || '',
+          address: userData.address || '',
+          avatar_url: userData.avatar_url || ''
+        });
+      } else {
+        // If no profile exists, create a minimal profile with just email from auth
+        setProfile({
+          id: userId,
+          email: user?.email || '',
+          full_name: '',
+          phone: '',
+          address: '',
+          avatar_url: ''
+        });
       }
 
-      const { data: roleData } = await supabase
-        .rpc('get_user_role', { _user_id: userId });
+      // Get user role using role service
+      const role = await roleService.getUserRole(userId);
       
-      if (roleData) {
-        setRole(roleData as AppRole);
+      if (role) {
+        setRole(role);
       } else {
+        // If no role found, default to 'user'
         setRole('user');
       }
     } catch (error) {

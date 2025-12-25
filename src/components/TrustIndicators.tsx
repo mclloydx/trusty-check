@@ -4,23 +4,23 @@ import { Shield, Users, Clock, Globe } from "lucide-react";
 const stats = [
   {
     icon: Shield,
-    value: "50,000+",
+    value: "10,000+",
     label: "Inspections Completed",
   },
   {
     icon: Users,
-    value: "500+",
-    label: "Verified Agents",
+    value: "98%",
+    label: "Customer Satisfaction",
   },
   {
     icon: Clock,
-    value: "24h",
-    label: "Average Response",
+    value: "50+",
+    label: "Cities Covered",
   },
   {
     icon: Globe,
-    value: "25+",
-    label: "Cities Covered",
+    value: "24/7",
+    label: "Platform Availability",
   },
 ];
 

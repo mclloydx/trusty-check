@@ -29,6 +29,9 @@ export type Database = {
           receipt_number: string | null
           receipt_uploaded_at: string | null
           receipt_url: string | null
+          receipt_verification_code: string | null
+          receipt_issued_at: string | null
+          receipt_data: Json | null
           service_fee: number
           service_tier: string
           status: Database["public"]["Enums"]["request_status"]
@@ -53,6 +56,9 @@ export type Database = {
           receipt_number?: string | null
           receipt_uploaded_at?: string | null
           receipt_url?: string | null
+          receipt_verification_code?: string | null
+          receipt_issued_at?: string | null
+          receipt_data?: Json | null
           service_fee: number
           service_tier?: string
           status?: Database["public"]["Enums"]["request_status"]
@@ -77,6 +83,9 @@ export type Database = {
           receipt_number?: string | null
           receipt_uploaded_at?: string | null
           receipt_url?: string | null
+          receipt_verification_code?: string | null
+          receipt_issued_at?: string | null
+          receipt_data?: Json | null
           service_fee?: number
           service_tier?: string
           status?: Database["public"]["Enums"]["request_status"]
@@ -142,12 +151,58 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      },
+      users: {
+        Row: {
+          id: string
+          email: string
+          password_hash: string
+          full_name: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          is_active: boolean
+          email_verified: boolean
+          created_at: string
+          updated_at: string
+          last_login: string | null
+        }
+        Insert: {
+          id?: string
+          email: string
+          password_hash: string
+          full_name?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          is_active?: boolean
+          email_verified?: boolean
+          created_at?: string
+          updated_at?: string
+          last_login?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          password_hash?: string
+          full_name?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          is_active?: boolean
+          email_verified?: boolean
+          created_at?: string
+          updated_at?: string
+          last_login?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_receipt_data: {
+        Args: { request_id: string }
+        Returns: Json
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

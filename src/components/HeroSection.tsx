@@ -1,14 +1,19 @@
 import { motion } from "framer-motion";
 import { Shield, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
 
 const benefits = [
-  "Verify products before payment",
-  "Local agents in every city",
-  "Real-time status updates",
+  "Inspect goods, vehicles, land & property",
+  "Secure payment & document handling",
+  "Neutral third-party verification",
+  "Transaction support platform",
 ];
 
 export function HeroSection() {
+  const [isMarketplaceOpen, setIsMarketplaceOpen] = useState(false);
+
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
       {/* Background Elements */}
@@ -38,13 +43,13 @@ export function HeroSection() {
 
             {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
-              Verify Before You{" "}
-              <span className="text-gradient">Pay</span>
+              Inspect. Verify.{" "}
+              <span className="text-gradient">Protect.</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
-              Connect with local agents to inspect products and services before completing your purchase. Buy with confidence from anywhere.
+              A neutral inspection, verification, and transaction support platform for goods, vehicles, land, property, and documents — even when buyers and sellers are miles apart.
             </p>
 
             {/* Benefits */}
@@ -78,8 +83,8 @@ export function HeroSection() {
                 Request Inspection
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="outline" size="xl">
-                Learn More
+              <Button variant="outline" size="xl" onClick={() => setIsMarketplaceOpen(true)}>
+                Market Place
               </Button>
             </motion.div>
           </motion.div>
@@ -154,6 +159,44 @@ export function HeroSection() {
           </motion.div>
         </div>
       </div>
+
+      {/* Marketplace Coming Soon Dialog */}
+      <Dialog open={isMarketplaceOpen} onOpenChange={setIsMarketplaceOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold">
+              🚀 Coming Soon! 🚀
+            </DialogTitle>
+          </DialogHeader>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="text-center space-y-4"
+          >
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="text-6xl"
+            >
+              🎄
+            </motion.div>
+            <p className="text-lg text-muted-foreground">
+              Our marketplace is currently being crafted by Santa's elves in the North Pole workshop!
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Check back after Christmas for some magical deals! 🎁✨
+            </p>
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              className="text-4xl"
+            >
+              🛍️
+            </motion.div>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

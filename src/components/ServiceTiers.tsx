@@ -1,58 +1,70 @@
 import { motion } from "framer-motion";
-import { Search, CreditCard, Truck, Check, Star } from "lucide-react";
+import { Search, CreditCard, Truck, Check, Star, Package, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const tiers = [
+const assetTypes = [
   {
-    id: "inspection",
-    name: "Inspection Only",
-    description: "Perfect when you just need verification",
-    price: "MWK 7,000",
-    icon: Search,
+    id: "goods",
+    name: "Goods & Items",
+    description: "Electronics, furniture, machinery, or any valuable items",
+    icon: Package,
     featured: false,
     features: [
-      "Product condition verification",
-      "Authenticity check",
-      "Detailed photo report",
-      "Agent-customer chat",
-      "Same-day inspection",
+      "On-site inspection and verification",
+      "Photos & video evidence",
+      "Condition and authenticity checks",
+      "Detailed inspection reports",
+      "Same-day service available",
     ],
-    cta: "Choose Plan",
+    cta: "Request Inspection",
   },
   {
-    id: "inspection-payment",
-    name: "Inspection + Payment",
-    description: "Most popular for remote buyers",
-    price: "MWK 10,000",
-    icon: CreditCard,
-    featured: true,
-    badge: "Most Popular",
-    features: [
-      "Everything in Inspection Only",
-      "Secure payment to seller",
-      "Transaction protection",
-      "Payment confirmation",
-      "Priority support",
-    ],
-    cta: "Choose Plan",
-  },
-  {
-    id: "full-service",
-    name: "Full Service",
-    description: "Complete end-to-end solution",
-    price: "MWK 10,000+",
+    id: "vehicle",
+    name: "Vehicles & Machinery",
+    description: "Cars, trucks, motorcycles, or industrial equipment",
     icon: Truck,
     featured: false,
     features: [
-      "Everything in Inspection + Payment",
-      "Packaging & shipping",
-      "Real-time tracking",
-      "Delivery confirmation",
-      "Insurance coverage",
+      "Physical condition assessment",
+      "Engine & body verification",
+      "Ownership document checks",
+      "Visual proof (photos & videos)",
+      "Authenticity verification",
     ],
-    cta: "Choose Plan",
+    cta: "Inspect Vehicle",
+  },
+  {
+    id: "property",
+    name: "Land & Property",
+    description: "Real estate, buildings, or land parcels",
+    icon: Search,
+    featured: true,
+    badge: "Most Popular",
+    features: [
+      "Physical property visit",
+      "Boundary & location verification",
+      "Occupancy & usage status",
+      "Photo, video & geo-location proof",
+      "Document verification",
+    ],
+    cta: "Inspect Property",
+  },
+  {
+    id: "documents",
+    name: "Documents & Ownership Papers",
+    description: "Certificates, contracts, or legal documents",
+    icon: FileText,
+    featured: false,
+    features: [
+      "Document authenticity verification",
+      "Content validation",
+      "Secure custody options",
+      "Digital copies & records",
+      "Legal document handling",
+    ],
+    cta: "Verify Documents",
   },
 ];
 
@@ -67,15 +79,15 @@ export function ServiceTiers() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Choose Your Service
+            What We Inspect
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Flexible options to match your needs. All services include our satisfaction guarantee.
+            Stazama inspects anything of value. From small electronics to large machinery, land, and documents - we ensure you get exactly what you pay for.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {tiers.map((tier, index) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          {assetTypes.map((tier, index) => (
             <motion.div
               key={tier.id}
               initial={{ opacity: 0, y: 20 }}
@@ -109,9 +121,6 @@ export function ServiceTiers() {
                   </div>
                   <CardTitle className="text-xl">{tier.name}</CardTitle>
                   <CardDescription>{tier.description}</CardDescription>
-                  <div className="mt-4">
-                    <span className="text-3xl font-bold text-foreground">{tier.price}</span>
-                  </div>
                 </CardHeader>
 
                 <CardContent className="flex-1">
