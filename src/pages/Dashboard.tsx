@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { UnifiedDashboard } from '@/components/dashboard/UnifiedDashboard';
 import { Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -11,27 +12,25 @@ export default function Dashboard() {
     if (!loading) {
       if (!user) {
         navigate('/auth');
-      } else if (role) {
-        switch (role) {
-          case 'admin':
-            navigate('/admin');
-            break;
-          case 'agent':
-            navigate('/agent');
-            break;
-          default:
-            navigate('/user');
-        }
       }
     }
-  }, [user, role, loading, navigate]);
+  }, [user, loading, navigate]);
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-        <p className="text-muted-foreground">Loading your dashboard...</p>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect via useEffect
+  }
+
+  // Return unified dashboard for all authenticated users
+  return <UnifiedDashboard />;
 }
