@@ -11,3 +11,10 @@
 [template.environment]
   VITE_SUPABASE_URL = "Your Supabase URL (e.g., https://your-project-id.supabase.co)"
   VITE_SUPABASE_PUBLISHABLE_KEY = "Your Supabase Publishable Key (starts with eyJ...)"
+
+# Secrets scanning configuration to allow Supabase public keys
+[build.processing]
+  "#_" = "Netlify Secrets scanning - Supabase anon keys are meant to be public for client-side use"
+
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_PUBLISHABLE_KEY,VITE_SUPABASE_URL,VITE_SUPABASE_PROJECT_ID"
