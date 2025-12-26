@@ -1,18 +1,17 @@
-// src/pages/SuperAdmin.tsx
+// src/pages/System.tsx
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { monitoring } from '@/lib/monitoring';
 import { cacheService } from '@/lib/cache';
-import { OverviewTab } from './admin/OverviewTab';
-import { UsersTab } from './admin/UsersTab';
-import { SystemTab } from './admin/SystemTab';
-import { LogsTab } from './admin/LogsTab';
-import { CacheTab } from './admin/CacheTab';
-import { SettingsTab } from './admin/SettingsTab';
+import { OverviewTab } from '@/components/admin/OverviewTab';
+import { UsersTab } from '@/components/admin/UsersTab';
+import { LogsTab } from '@/components/admin/LogsTab';
+import { CacheTab } from '@/components/admin/CacheTab';
+import { SettingsTab } from '@/components/admin/SettingsTab';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
-export default function SuperAdmin() {
+export default function System() {
   const [systemMetrics, setSystemMetrics] = useState<any>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const location = useLocation();
@@ -29,14 +28,11 @@ export default function SuperAdmin() {
         return;
       }
       
-      // Check if user has admin role
+      // Check if user has admin role using the database function
       const { data: roleData, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', currentUser.id)
-        .single();
+        .rpc('is_admin', { user_id_param: currentUser.id });
       
-      const isAdmin = !error && roleData?.role === 'admin';
+      const isAdmin = !error && roleData === true;
       setIsAuthorized(isAdmin);
       
       if (isAdmin) {
@@ -52,7 +48,7 @@ export default function SuperAdmin() {
     const pathParts = location.pathname.split('/');
     const tabFromUrl = pathParts[pathParts.length - 1];
     
-    if (['overview', 'users', 'system', 'logs', 'cache', 'settings'].includes(tabFromUrl)) {
+    if (['overview', 'users', 'logs', 'cache', 'settings'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl);
     } else {
       setActiveTab('overview');
@@ -83,11 +79,11 @@ export default function SuperAdmin() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Super Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">System Dashboard</h1>
         
         {/* Navigation Tabs */}
         <div className="flex border-b border-gray-200 mb-6">
-          {['overview', 'users', 'system', 'logs', 'cache', 'settings'].map((tab) => (
+          {['overview', 'users', 'logs', 'cache', 'settings'].map((tab) => (
             <button
               key={tab}
               className={`px-4 py-2 font-medium ${
@@ -95,7 +91,7 @@ export default function SuperAdmin() {
                   ? 'border-b-2 border-blue-500 text-blue-600'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
-              onClick={() => navigate(`/super-admin/${tab}`)}
+              onClick={() => navigate(`/system/${tab}`)}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
@@ -106,7 +102,6 @@ export default function SuperAdmin() {
         <div className="bg-white p-6 rounded-lg shadow">
           {activeTab === 'overview' && <OverviewTab metrics={systemMetrics} onRefresh={loadSystemMetrics} />}
           {activeTab === 'users' && <UsersTab />}
-          {activeTab === 'system' && <SystemTab metrics={systemMetrics} />}
           {activeTab === 'logs' && <LogsTab />}
           {activeTab === 'cache' && <CacheTab />}
           {activeTab === 'settings' && <SettingsTab />}

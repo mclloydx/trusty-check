@@ -113,12 +113,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const getMenuItems = () => {
     return [
-      { id: 'overview', label: 'Overview', icon: Activity, path: '/super-admin' },
-      { id: 'users', label: 'User Management', icon: Users, path: '/super-admin/users' },
-      { id: 'system', label: 'System Status', icon: Shield, path: '/super-admin/system' },
-      { id: 'logs', label: 'System Logs', icon: Database, path: '/super-admin/logs' },
-      { id: 'cache', label: 'Cache Management', icon: Database, path: '/super-admin/cache' },
-      { id: 'settings', label: 'Settings', icon: Settings, path: '/super-admin/settings' },
+      { id: 'overview', label: 'Overview', icon: Activity, path: '/system' },
+      { id: 'users', label: 'User Management', icon: Users, path: '/system/users' },
+      { id: 'system', label: 'System Status', icon: Shield, path: '/system/system' },
+      { id: 'logs', label: 'System Logs', icon: Database, path: '/system/logs' },
+      { id: 'cache', label: 'Cache Management', icon: Database, path: '/system/cache' },
+      { id: 'settings', label: 'Settings', icon: Settings, path: '/system/settings' },
     ];
   };
 

@@ -117,8 +117,8 @@ const BecomeAgent = () => {
   const handleApplicationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle application submission
-    alert('Application submitted! We\'ll contact you within 24 hours.');
     setShowApplication(false);
+    // TODO: Show proper success notification using toast or similar
   };
 
   return (

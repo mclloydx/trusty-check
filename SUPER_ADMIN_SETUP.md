@@ -59,5 +59,5 @@ If no environment variables are provided, the script will use:
 
 After running the script, you can:
 1. Log in to your application with the admin credentials
-2. Access the Super Admin Dashboard at `/super-admin`
+2. Access the System Dashboard at `/system`
 3. Verify that you have full administrative privileges

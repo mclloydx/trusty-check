@@ -13,7 +13,8 @@ const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
-const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
+const System = lazy(() => import("./pages/System"));
+const SystemTest = lazy(() => import("./pages/SystemTest"));
 const BecomeAgent = lazy(() => import("./pages/BecomeAgent"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -57,12 +58,12 @@ const App = () => (
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/request" element={<Navigate to="/" replace />} />
-                <Route path="/super-admin" element={<SuperAdmin />} />
-                <Route path="/super-admin/users" element={<SuperAdmin />} />
-                <Route path="/super-admin/system" element={<SuperAdmin />} />
-                <Route path="/super-admin/logs" element={<SuperAdmin />} />
-                <Route path="/super-admin/cache" element={<SuperAdmin />} />
-                <Route path="/super-admin/settings" element={<SuperAdmin />} />
+                <Route path="/system" element={<SystemTest />} />
+                <Route path="/system/overview" element={<System />} />
+                <Route path="/system/users" element={<System />} />
+                <Route path="/system/logs" element={<System />} />
+                <Route path="/system/cache" element={<System />} />
+                <Route path="/system/settings" element={<System />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
