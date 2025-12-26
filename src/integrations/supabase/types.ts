@@ -204,7 +204,7 @@ export type Database = {
         Returns: Json
       }
       get_user_role: {
-        Args: { _user_id: string }
+        Args: { user_id_param: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
       has_role: {
@@ -217,6 +217,74 @@ export type Database = {
       is_admin: {
         Args: { user_id_param: string }
         Returns: boolean
+      }
+      is_agent: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      is_user: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      can_manage_users: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      can_view_dashboard: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      can_create_request: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      can_manage_request: {
+        Args: { 
+          user_id_param: string
+          request_id_param: string
+        }
+        Returns: boolean
+      }
+      can_view_request: {
+        Args: { 
+          user_id_param: string
+          request_id_param: string
+        }
+        Returns: boolean
+      }
+      can_view_all_requests: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      can_manage_payments: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      create_user_with_role: {
+        Args: {
+          email_param: string
+          password_param: string
+          full_name_param: string
+          phone_param: string | null
+          role_param: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string
+      }
+      update_user_role: {
+        Args: {
+          admin_user_id: string
+          target_user_id: string
+          new_role: string
+        }
+        Returns: boolean
+      }
+      get_users_by_role: {
+        Args: { role_param: Database["public"]["Enums"]["app_role"] }
+        Returns: Json[]
+      }
+      count_users_by_role: {
+        Args: Record<string, never>
+        Returns: Json[]
       }
     }
     Enums: {

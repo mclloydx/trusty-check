@@ -275,7 +275,7 @@ export const roleService: RoleService = {
         throw new Error(error.message);
       }
       
-      return data;
+      return data as string;
     } catch (error) {
       console.error('Unexpected error creating user with role:', error);
       throw new Error('Failed to create user with role');
@@ -300,7 +300,7 @@ export const roleService: RoleService = {
         return false;
       }
       
-      return data;
+      return data as boolean;
     } catch (error) {
       console.error('Unexpected error updating user role:', error);
       return false;

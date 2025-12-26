@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useCallback, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { roleService } from '@/integrations/supabase/roleService';
@@ -20,7 +20,7 @@ interface Profile {
   avatar_url: string | null;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
@@ -31,7 +31,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = useCallback(async (userId: string) => {
     // Skip if supabase is not available
     if (!supabase) {
       console.warn('Supabase client not available, skipping user data fetch');
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching user data:', error);
       setRole('user');
     }
-  };
+  }, [user?.email]);
 
   useEffect(() => {
     // Skip if supabase is not available
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscription.unsubscribe();
       }
     };
-  }, []);
+  }, [fetchUserData]);
 
   const signIn = async (email: string, password: string) => {
     // Return early if supabase is not available
@@ -213,10 +213,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
