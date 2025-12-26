@@ -75,7 +75,7 @@ export function UnifiedDashboard() {
   const [agents, setAgents] = useState<Agent[]>([]);
   
   // UI states
-  const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'clients' | 'users' | 'profile'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'my-requests' | 'available' | 'clients' | 'users' | 'agents' | 'profile'>('overview');
   const [requestFilter, setRequestFilter] = useState<'all' | 'pending' | 'active' | 'completed' | 'cancelled'>('all');
   const [selectedRequest, setSelectedRequest] = useState<InspectionRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -382,6 +382,29 @@ export function UnifiedDashboard() {
     setIsModalOpen(true);
   };
 
+  // Update selected request with fresh data from database
+  const refreshSelectedRequest = useCallback(async (requestId: string) => {
+    if (!supabase) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('inspection_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        setSelectedRequest(data);
+        // Also update the requests array
+        setRequests(prev => prev.map(req => req.id === requestId ? data : req));
+      }
+    } catch (error) {
+      console.error('Error refreshing request:', error);
+    }
+  }, [supabase]);
+
   // Notification system
   useEffect(() => {
     if (!supabase || !user) return;
@@ -468,7 +491,7 @@ export function UnifiedDashboard() {
               {profile?.full_name || profile?.email || user?.email}
             </span>
             <Badge variant="default" className="text-xs py-0.5 px-2">
-              {role?.charAt(0).toUpperCase() + role?.slice(1)}
+              {role ? role.charAt(0).toUpperCase() + role.slice(1) : 'User'}
             </Badge>
             <Button variant="ghost" size="icon" onClick={() => { signOut(); navigate('/'); }} className="w-8 h-8">
               <LogOut className="w-4 h-4" />
@@ -480,62 +503,139 @@ export function UnifiedDashboard() {
       <main className="container mx-auto px-4 py-6">
         {/* Role-based Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          <Button 
-            variant={activeTab === 'overview' ? 'default' : 'outline'} 
-            onClick={() => setActiveTab('overview')}
-            className="gap-2 whitespace-nowrap"
-            size="sm"
-          >
-            <Home className="w-4 h-4" />
-            Overview
-          </Button>
-          
-          {permissions.canViewAllRequests && (
-            <Button 
-              variant={activeTab === 'requests' ? 'default' : 'outline'} 
-              onClick={() => setActiveTab('requests')}
-              className="gap-2 whitespace-nowrap"
-              size="sm"
-            >
-              <Package className="w-4 h-4" />
-              Requests
-            </Button>
+          {/* Admin Tabs */}
+          {role === 'admin' && (
+            <>
+              <Button 
+                variant={activeTab === 'overview' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('overview')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <Home className="w-4 h-4" />
+                Overview
+              </Button>
+              
+              <Button 
+                variant={activeTab === 'requests' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('requests')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <Package className="w-4 h-4" />
+                All Requests
+              </Button>
+              
+              <Button 
+                variant={activeTab === 'clients' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('clients')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <Users className="w-4 h-4" />
+                Clients
+              </Button>
+              
+              <Button 
+                variant={activeTab === 'users' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('users')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <UserCog className="w-4 h-4" />
+                Users Management
+              </Button>
+              
+              <Button 
+                variant={activeTab === 'agents' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('agents')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <Shield className="w-4 h-4" />
+                Agents
+              </Button>
+            </>
           )}
           
-          {permissions.canViewClients && (
-            <Button 
-              variant={activeTab === 'clients' ? 'default' : 'outline'} 
-              onClick={() => setActiveTab('clients')}
-              className="gap-2 whitespace-nowrap"
-              size="sm"
-            >
-              <Users className="w-4 h-4" />
-              Clients
-            </Button>
+          {/* Agent Tabs */}
+          {role === 'agent' && (
+            <>
+              <Button 
+                variant={activeTab === 'overview' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('overview')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <Home className="w-4 h-4" />
+                Dashboard
+              </Button>
+              
+              <Button 
+                variant={activeTab === 'my-requests' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('my-requests')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <Package className="w-4 h-4" />
+                My Requests
+              </Button>
+              
+              <Button 
+                variant={activeTab === 'available' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('available')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <ClipboardList className="w-4 h-4" />
+                Available Requests
+              </Button>
+              
+              <Button 
+                variant={activeTab === 'clients' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('clients')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <Users className="w-4 h-4" />
+                Clients
+              </Button>
+            </>
           )}
           
-          {permissions.canViewUsers && (
-            <Button 
-              variant={activeTab === 'users' ? 'default' : 'outline'} 
-              onClick={() => setActiveTab('users')}
-              className="gap-2 whitespace-nowrap"
-              size="sm"
-            >
-              <UserCog className="w-4 h-4" />
-              Users
-            </Button>
-          )}
-          
-          {permissions.canManageProfile && (
-            <Button 
-              variant={activeTab === 'profile' ? 'default' : 'outline'} 
-              onClick={() => setActiveTab('profile')}
-              className="gap-2 whitespace-nowrap"
-              size="sm"
-            >
-              <User className="w-4 h-4" />
-              Profile
-            </Button>
+          {/* User Tabs */}
+          {role === 'user' && (
+            <>
+              <Button 
+                variant={activeTab === 'overview' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('overview')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <Home className="w-4 h-4" />
+                Dashboard
+              </Button>
+              
+              <Button 
+                variant={activeTab === 'my-requests' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('my-requests')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <Package className="w-4 h-4" />
+                My Requests
+              </Button>
+              
+              <Button 
+                variant={activeTab === 'profile' ? 'default' : 'outline'} 
+                onClick={() => setActiveTab('profile')}
+                className="gap-2 whitespace-nowrap"
+                size="sm"
+              >
+                <User className="w-4 h-4" />
+                Profile
+              </Button>
+            </>
           )}
         </div>
 
@@ -1083,6 +1183,170 @@ export function UnifiedDashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Agent-specific Tabs */}
+        {role === 'agent' && activeTab === 'my-requests' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Assigned Requests</CardTitle>
+                <CardDescription>Requests assigned to you</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingRequests ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {requests.filter(r => r.assigned_agent_id === user?.id).map(request => (
+                      <div key={request.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold">{request.customer_name}</h3>
+                            <p className="text-sm text-muted-foreground">{request.store_name}</p>
+                          </div>
+                          <Badge variant={statusConfig[request.status]?.variant || 'outline'}>
+                            {statusConfig[request.status]?.label || request.status}
+                          </Badge>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setIsModalOpen(true);
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {role === 'agent' && activeTab === 'available' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Requests</CardTitle>
+                <CardDescription>Unassigned requests you can take</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingRequests ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {requests.filter(r => !r.assigned_agent_id).map(request => (
+                      <div key={request.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold">{request.customer_name}</h3>
+                            <p className="text-sm text-muted-foreground">{request.store_name}</p>
+                          </div>
+                          <Badge variant="outline">Available</Badge>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => roleActions.assignSelf(request.id)}
+                        >
+                          Assign to Me
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* User-specific Tabs */}
+        {role === 'user' && activeTab === 'my-requests' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Requests</CardTitle>
+                <CardDescription>Your inspection requests</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingRequests ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {requests.map(request => (
+                      <div key={request.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold">{request.store_name}</h3>
+                            <p className="text-sm text-muted-foreground">{request.product_details}</p>
+                          </div>
+                          <Badge variant={statusConfig[request.status]?.variant || 'outline'}>
+                            {statusConfig[request.status]?.label || request.status}
+                          </Badge>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setIsModalOpen(true);
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Admin-specific Agents Tab */}
+        {role === 'admin' && activeTab === 'agents' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Agents Management</CardTitle>
+                <CardDescription>Manage inspection agents</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingAgents ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {agents.map(agent => (
+                      <div key={agent.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold">{agent.full_name || 'Unknown'}</h3>
+                            <p className="text-sm text-muted-foreground">{agent.email}</p>
+                          </div>
+                          <Badge variant="secondary">Agent</Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </main>
 
       {/* Unified Request Modal */}
@@ -1094,14 +1358,54 @@ export function UnifiedDashboard() {
         currentUserId={user?.id}
         currentUserEmail={user?.email}
         agents={agents}
-        onStatusUpdate={roleActions.updateRequestStatus}
-        onAgentAssignment={roleActions.assignAgent}
-        onSelfAssignment={roleActions.assignSelf}
-        onPaymentProcessing={roleActions.processPayment}
-        onFeeUpdate={roleActions.updateFees}
-        onPaymentReceived={roleActions.markPaymentReceived}
-        onRequestComplete={roleActions.completeRequest}
-        onRequestCancel={roleActions.cancelRequest}
+        onStatusUpdate={async (requestId: string, status: string) => {
+          const success = await roleActions.updateRequestStatus(requestId, status);
+          if (success && selectedRequest?.id === requestId) {
+            await refreshSelectedRequest(requestId);
+          }
+        }}
+        onAgentAssignment={async (requestId: string, agentId: string | null) => {
+          const success = await roleActions.assignAgent(requestId, agentId);
+          if (success && selectedRequest?.id === requestId) {
+            await refreshSelectedRequest(requestId);
+          }
+        }}
+        onSelfAssignment={async (requestId: string) => {
+          const success = await roleActions.assignSelf(requestId);
+          if (success && selectedRequest?.id === requestId) {
+            await refreshSelectedRequest(requestId);
+          }
+        }}
+        onPaymentProcessing={async (requestId: string, amount: string, method: string) => {
+          const success = await roleActions.processPayment(requestId, amount, method);
+          if (success && selectedRequest?.id === requestId) {
+            await refreshSelectedRequest(requestId);
+          }
+        }}
+        onFeeUpdate={async (requestId: string, feeAmount: string, additionalFees: string, feeNotes: string) => {
+          const success = await roleActions.updateFees(requestId, feeAmount, additionalFees, feeNotes);
+          if (success && selectedRequest?.id === requestId) {
+            await refreshSelectedRequest(requestId);
+          }
+        }}
+        onPaymentReceived={async (requestId: string) => {
+          const success = await roleActions.markPaymentReceived(requestId);
+          if (success && selectedRequest?.id === requestId) {
+            await refreshSelectedRequest(requestId);
+          }
+        }}
+        onRequestComplete={async (requestId: string) => {
+          const success = await roleActions.completeRequest(requestId);
+          if (success && selectedRequest?.id === requestId) {
+            await refreshSelectedRequest(requestId);
+          }
+        }}
+        onRequestCancel={async (requestId: string) => {
+          const success = await roleActions.cancelRequest(requestId);
+          if (success && selectedRequest?.id === requestId) {
+            await refreshSelectedRequest(requestId);
+          }
+        }}
       />
     </div>
   );

@@ -29,14 +29,25 @@ export const supabase: SupabaseClientType = SUPABASE_URL && SUPABASE_PUBLISHABLE
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: false, // Prevent URL manipulation
+        flowType: 'pkce', // Enhanced security with PKCE
       },
       global: {
         headers: {
           'X-Client-Info': 'trusty-check-app',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'DENY',
+          'X-XSS-Protection': '1; mode=block',
+          'Referrer-Policy': 'strict-origin-when-cross-origin',
+          'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
         },
       },
       db: {
         schema: 'public',
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10, // Rate limit realtime events
+        },
       },
     })
   : null;

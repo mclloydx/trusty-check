@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { roleService } from '@/integrations/supabase/roleService';
+import { isAuthAllowed, isPasswordResetAllowed } from '@/lib/rateLimiter';
 
 // Check if supabase client is available
 if (!supabase) {
@@ -160,6 +161,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Return early if supabase is not available
     if (!supabase) {
       return { error: new Error('Authentication is not available') };
+    }
+
+    // Rate limiting check
+    if (!isAuthAllowed(email)) {
+      return { error: new Error('Too many authentication attempts. Please try again later.') };
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });

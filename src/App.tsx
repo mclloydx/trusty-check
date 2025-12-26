@@ -12,10 +12,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const AgentDashboard = lazy(() => import("./pages/AgentDashboard"));
-const UserDashboard = lazy(() => import("./pages/UserDashboard"));
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
+const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const BecomeAgent = lazy(() => import("./pages/BecomeAgent"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -52,16 +50,19 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
-                <Route path="/agent" element={<ProtectedRoute requiredRole="agent"><AgentDashboard /></ProtectedRoute>} />
-                <Route path="/user" element={<ProtectedRoute requiredRole="user"><UserDashboard /></ProtectedRoute>} />
-                <Route path="/track" element={<TrackOrder />} />
+                                <Route path="/track" element={<TrackOrder />} />
   
                 <Route path="/become-agent" element={<BecomeAgent />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/request" element={<Navigate to="/" replace />} />
+                <Route path="/super-admin" element={<SuperAdmin />} />
+                <Route path="/super-admin/users" element={<SuperAdmin />} />
+                <Route path="/super-admin/system" element={<SuperAdmin />} />
+                <Route path="/super-admin/logs" element={<SuperAdmin />} />
+                <Route path="/super-admin/cache" element={<SuperAdmin />} />
+                <Route path="/super-admin/settings" element={<SuperAdmin />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
