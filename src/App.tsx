@@ -2,17 +2,19 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useScrollToSection } from "@/hooks/useScrollToSection";
 
 
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
+const RequestPage = lazy(() => import("./pages/RequestPage"));
 const System = lazy(() => import("./pages/System"));
 const SystemTest = lazy(() => import("./pages/SystemTest"));
 const BecomeAgent = lazy(() => import("./pages/BecomeAgent"));
@@ -38,6 +40,44 @@ const queryClient = new QueryClient({
   },
 });
 
+const AppContent = () => {
+  const location = useLocation();
+  const { scrollToSection } = useScrollToSection();
+
+  useEffect(() => {
+    // Handle initial hash scroll
+    if (location.hash && location.pathname === '/') {
+      setTimeout(() => {
+        scrollToSection(location.hash);
+      }, 100);
+    }
+  }, [location, scrollToSection]);
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/track" element={<TrackOrder />} />
+        <Route path="/request" element={<RequestPage />} />
+        <Route path="/become-agent" element={<BecomeAgent />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
+        <Route path="/system" element={<SystemTest />} />
+        <Route path="/system/overview" element={<System />} />
+        <Route path="/system/users" element={<System />} />
+        <Route path="/system/logs" element={<System />} />
+        <Route path="/system/cache" element={<System />} />
+        <Route path="/system/settings" element={<System />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+};
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -46,28 +86,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
-            <Suspense fallback={<div>Loading...</div>}>
-            <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                                <Route path="/track" element={<TrackOrder />} />
-  
-                <Route path="/become-agent" element={<BecomeAgent />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/terms-of-service" element={<TermsOfService />} />
-                <Route path="/refund-policy" element={<RefundPolicy />} />
-                <Route path="/request" element={<Navigate to="/" replace />} />
-                <Route path="/system" element={<SystemTest />} />
-                <Route path="/system/overview" element={<System />} />
-                <Route path="/system/users" element={<System />} />
-                <Route path="/system/logs" element={<System />} />
-                <Route path="/system/cache" element={<System />} />
-                <Route path="/system/settings" element={<System />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <AppContent />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

@@ -1,7 +1,7 @@
 import React, { useState, createElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, ArrowLeft, Package, Clock, CheckCircle, XCircle, AlertCircle, Edit as EditIcon, X, Save, Loader2 } from 'lucide-react';
+import { Search, ArrowLeft, Package, Clock, CheckCircle, XCircle, AlertCircle, Edit as EditIcon, X, Save, Loader2, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -264,6 +264,10 @@ export default function TrackOrder() {
             </Button>
             <span className="font-bold text-xl">Track Your Order</span>
           </div>
+          <Button onClick={() => navigate('/request')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Request
+          </Button>
         </div>
       </header>
 

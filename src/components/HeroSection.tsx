@@ -3,6 +3,7 @@ import { Shield, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const benefits = [
   "Inspect goods, vehicles, land & property",
@@ -76,12 +77,14 @@ export function HeroSection() {
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
               <Button
+                asChild
                 size="xl"
                 className="group"
-                onClick={() => document.getElementById('request')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                Request Inspection
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <Link to="/request">
+                  Request Inspection
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </Button>
               <Button variant="outline" size="xl" onClick={() => setIsMarketplaceOpen(true)}>
                 Market Place

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -36,6 +36,14 @@ export function DashboardHeader({ role, profile, user, onSignOut }: DashboardHea
           </Link>
         </div>
         <div className="flex items-center gap-3">
+          {user && (
+            <Button asChild size="sm">
+              <Link to="/request">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Request
+              </Link>
+            </Button>
+          )}
           <span className="text-xs sm:text-sm text-muted-foreground max-w-[120px] sm:max-w-none truncate hidden xs:inline">
             {profile?.full_name || profile?.email || user?.email}
           </span>

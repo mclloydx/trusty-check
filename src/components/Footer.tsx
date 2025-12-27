@@ -1,7 +1,13 @@
 import { Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useScrollToSection } from "@/hooks/useScrollToSection";
 
 export function Footer() {
+  const { scrollToSection } = useScrollToSection();
+
+  const handleSectionClick = (sectionId: string) => {
+    scrollToSection(sectionId);
+  };
   return (
     <footer className="bg-foreground text-background py-16">
       <div className="container mx-auto px-4">
@@ -34,9 +40,9 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-3">
-              <li><Link to="/#how-it-works" className="text-background/70 hover:text-background transition-colors">How It Works</Link></li>
-              <li><Link to="/#services" className="text-background/70 hover:text-background transition-colors">Services</Link></li>
-              <li><Link to="/request-inspection" className="text-background/70 hover:text-background transition-colors">Request Inspection</Link></li>
+              <li><button onClick={() => handleSectionClick("#how-it-works")} className="text-background/70 hover:text-background transition-colors">How It Works</button></li>
+              <li><button onClick={() => handleSectionClick("#services")} className="text-background/70 hover:text-background transition-colors">Services</button></li>
+              <li><Link to="/track" className="text-background/70 hover:text-background transition-colors">Track Order</Link></li>
               <li><Link to="/become-agent" className="text-background/70 hover:text-background transition-colors">Become an Agent</Link></li>
             </ul>
           </div>

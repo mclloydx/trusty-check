@@ -1,20 +1,29 @@
 import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useScrollToSection } from "@/hooks/useScrollToSection";
 
 const navLinks = [
-  { label: "How It Works", href: "/#how-it-works" },
-  { label: "Services", href: "/#services" },
-  { label: "Request Inspection", href: "/request-inspection" },
-  { label: "Track Order", href: "/track" },
+  { label: "How It Works", href: "#how-it-works", isSection: true },
+  { label: "Services", href: "#services", isSection: true },
+  { label: "Track Order", href: "/track", isSection: false },
 ];
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, loading } = useAuth();
+  const { scrollToSection } = useScrollToSection();
+  const location = useLocation();
+
+  const handleNavClick = (link: typeof navLinks[0]) => {
+    if (link.isSection) {
+      scrollToSection(link.href);
+    }
+    setIsOpen(false);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
@@ -31,13 +40,23 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.label}
-              </Link>
+              link.isSection ? (
+                <button
+                  key={link.href}
+                  onClick={() => handleNavClick(link)}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {link.label}
+                </button>
+              ) : (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
           </nav>
 
@@ -81,14 +100,24 @@ export function Header() {
           >
             <nav className="flex flex-col gap-4">
               {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {link.label}
-                </Link>
+                link.isSection ? (
+                  <button
+                    key={link.href}
+                    onClick={() => handleNavClick(link)}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
+                  >
+                    {link.label}
+                  </button>
+                ) : (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                )
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 {!loading && (
