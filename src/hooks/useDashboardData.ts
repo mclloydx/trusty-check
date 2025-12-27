@@ -128,29 +128,16 @@ export function useDashboardData({ user, role, permissions }: UseDashboardDataPr
 
     setLoadingAgents(true);
     try {
-      const { data: userRoleData, error: userRoleError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'agent');
-
-      if (userRoleError) throw userRoleError;
-
-      if (userRoleData && userRoleData.length > 0) {
-        const userIds = userRoleData.map(role => role.user_id);
-        
-        const { data: agentProfiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', userIds);
+      const { data: agentProfiles, error: profilesError } = await supabase
+          .rpc('get_agent_profiles_with_email');
         
         if (profilesError) throw profilesError;
         
         if (agentProfiles) {
           setAgents(agentProfiles);
+        } else {
+          setAgents([]);
         }
-      } else {
-        setAgents([]);
-      }
     } catch (error) {
       console.error('Error fetching agents:', error);
     } finally {
@@ -265,7 +252,7 @@ export function useDashboardData({ user, role, permissions }: UseDashboardDataPr
     } catch (error) {
       console.error('Error refreshing request:', error);
     }
-  }, [supabase]);
+  }, []);
 
   return {
     // Data

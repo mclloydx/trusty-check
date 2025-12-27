@@ -4,10 +4,10 @@
 -- Primary key and foreign key indexes (if not already present)
 CREATE INDEX IF NOT EXISTS idx_profiles_pkey ON profiles(id);
 CREATE INDEX IF NOT EXISTS idx_inspection_requests_pkey ON inspection_requests(id);
-CREATE INDEX IF NOT EXISTS idx_user_profiles_pkey ON user_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_pkey ON user_roles(id);
 
--- User-related indexes
-CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
+-- User-related indexes (only for existing columns)
+-- Note: profiles.email doesn't exist - email is in auth.users
 CREATE INDEX IF NOT EXISTS idx_profiles_full_name ON profiles(full_name);
 CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON profiles(created_at);
 
@@ -26,10 +26,10 @@ CREATE INDEX IF NOT EXISTS idx_inspection_requests_user_status ON inspection_req
 CREATE INDEX IF NOT EXISTS idx_inspection_requests_status_created ON inspection_requests(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_inspection_requests_priority_status ON inspection_requests(priority, status);
 
--- User profiles indexes
-CREATE INDEX IF NOT EXISTS idx_user_profiles_role ON user_profiles(role);
-CREATE INDEX IF NOT EXISTS idx_user_profiles_created_at ON user_profiles(created_at);
-CREATE INDEX IF NOT EXISTS idx_user_profiles_updated_at ON user_profiles(updated_at);
+-- User roles indexes (replacing user_profiles)
+CREATE INDEX IF NOT EXISTS idx_user_roles_role ON user_roles(role);
+CREATE INDEX IF NOT EXISTS idx_user_roles_created_at ON user_roles(assigned_at);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
 
 -- Full-text search indexes
 CREATE INDEX IF NOT EXISTS idx_profiles_full_name_fts ON profiles USING GIN(to_tsvector('english', full_name));
@@ -53,7 +53,7 @@ CREATE INDEX IF NOT EXISTS idx_inspection_requests_high_priority ON inspection_r
 
 -- Statistics and monitoring indexes
 CREATE INDEX IF NOT EXISTS idx_inspection_requests_monthly_stats ON inspection_requests(created_at, status);
-CREATE INDEX IF NOT EXISTS idx_user_profiles_by_role_created ON user_profiles(role, created_at);
+CREATE INDEX IF NOT EXISTS idx_user_roles_by_role_created ON user_roles(role, assigned_at);
 
 -- Function to analyze table statistics (run periodically)
 CREATE OR REPLACE FUNCTION analyze_table_statistics()
@@ -64,7 +64,7 @@ AS $$
 BEGIN
     ANALYZE profiles;
     ANALYZE inspection_requests;
-    ANALYZE user_profiles;
+    ANALYZE user_roles;
 END;
 $$;
 
@@ -86,7 +86,7 @@ GRANT SELECT ON dashboard_summary TO anon;
 -- Create materialized view for performance (needs manual refresh)
 CREATE MATERIALIZED VIEW IF NOT EXISTS user_request_stats AS
 SELECT 
-    u.id as user_id,
+    p.id as user_id,
     u.email,
     p.full_name,
     COUNT(ir.id) as total_requests,
@@ -95,10 +95,11 @@ SELECT
     AVG(CASE WHEN ir.status = 'completed' THEN 
         EXTRACT(EPOCH FROM (ir.updated_at - ir.created_at))/3600 
     END) as avg_completion_hours
-FROM profiles u
-LEFT JOIN inspection_requests ir ON u.id = ir.user_id
-LEFT JOIN user_profiles up ON u.id = up.user_id
-GROUP BY u.id, u.email, p.full_name;
+FROM profiles p
+JOIN auth.users u ON p.id = u.id
+LEFT JOIN inspection_requests ir ON p.id = ir.user_id
+LEFT JOIN user_roles ur ON p.id = ur.user_id
+GROUP BY p.id, u.email, p.full_name;
 
 -- Index for materialized view
 CREATE INDEX IF NOT EXISTS idx_user_request_stats_user_id ON user_request_stats(user_id);
